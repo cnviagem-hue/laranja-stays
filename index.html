@@ -106,8 +106,6 @@
 
     <div id="app-content" class="hidden-view">
         
-        <!-- Modais Internos do Sistema -->
-        
         <!-- Modal Pagamento -->
         <div id="modal-pagamento" class="hidden-view fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
             <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden text-center p-6">
@@ -281,36 +279,36 @@
 
                 </div>
                 <div class="p-4 border-t border-slate-200 bg-white flex justify-between items-center rounded-b-2xl">
-                    <button onclick="fecharModalCadastro()" class="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors text-sm">Cancelar</button>
-                    <button type="button" onclick="validarESalvarImovel()" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95"><i class="fas fa-save mr-2"></i> Salvar Imóvel</button>
+                <button onclick="fecharModalCadastro()" class="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors text-sm">Cancelar</button>
+                <button type="button" onclick="validarESalvarImovel()" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95"><i class="fas fa-save mr-2"></i> Salvar Imóvel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center cursor-pointer">
+                    <div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div>
+                    <span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight" id="titulo-app-nav">Laranja<span class="text-slate-800">Stays</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex bg-slate-100 p-1 rounded-full relative z-50">
+                        <button onclick="mudarAba('vitrine')" id="btn-vitrine" class="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"><i class="fas fa-search mr-1.5 hidden sm:inline"></i>Vitrine</button>
+                        <button onclick="mudarAba('admin')" id="btn-admin" class="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"><i class="fas fa-cog mr-1.5 hidden sm:inline"></i>Admin</button>
+                    </div>
+                    <div class="border-l border-slate-200 h-6 mx-1" id="nav-divisor"></div>
+                    <button id="btn-sair-sistema" onclick="fazerLogout()" class="text-slate-500 hover:text-red-500 transition-colors text-sm font-bold flex items-center" title="Sair do Sistema">
+                        <i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline ml-1.5">Sair</span>
+                    </button>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <!-- NAVBAR -->
-        <nav class="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16 items-center">
-                    <div class="flex items-center cursor-pointer">
-                        <div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div>
-                        <span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Laranja<span class="text-slate-800">Stays</span></span>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex bg-slate-100 p-1 rounded-full relative z-50">
-                            <button onclick="mudarAba('vitrine')" id="btn-vitrine" class="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"><i class="fas fa-search mr-1.5 hidden sm:inline"></i>Vitrine</button>
-                            <button onclick="mudarAba('admin')" id="btn-admin" class="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"><i class="fas fa-cog mr-1.5 hidden sm:inline"></i>Admin</button>
-                        </div>
-                        <div class="border-l border-slate-200 h-6 mx-1"></div>
-                        <button onclick="fazerLogout()" class="text-slate-500 hover:text-red-500 transition-colors text-sm font-bold flex items-center" title="Sair do Sistema">
-                            <i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline ml-1.5">Sair</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- TELA: VITRINE -->
-        <div id="tela-vitrine" class="min-h-screen pb-12 w-full fade-in relative z-10"><div class="bg-orange-500 py-12 sm:py-16 px-4 relative z-30"><div class="max-w-6xl mx-auto relative"><h1 class="text-3xl sm:text-5xl font-bold text-white mb-8 leading-tight text-center sm:text-left drop-shadow-md">Encontre o refúgio perfeito</h1><div class="flex flex-col lg:flex-row gap-3 w-full items-stretch relative"><div class="flex-1 lg:max-w-[350px] relative" id="container-destino"><div class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-text transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-map-marker-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Destino</label><input type="text" id="busca-cidade" autocomplete="off" onfocus="document.getElementById('dropdown-destinos').classList.remove('hidden-view'); filtrarDestinos()" oninput="filtrarDestinos()" placeholder="Para onde você vai?" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 placeholder-slate-300"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-destinos" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-64 custom-scroll"><div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">Cidades Disponíveis</div><ul id="lista-custom-cidades" class="flex flex-col"></ul></div></div><div class="flex-[1.5] bg-white rounded-xl shadow-lg flex items-center px-4 h-16 transition-all border border-transparent hover:border-slate-200 relative cursor-pointer focus-within:ring-2 focus-within:ring-orange-300 z-30" onclick="document.getElementById('busca-datas-range')._flatpickr.open()"><i class="far fa-calendar-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Datas da Viagem</label><input type="text" id="busca-datas-range" placeholder="Entrada  -  Saída" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"></div></div><div class="flex-1 lg:max-w-[220px] relative" id="container-hospedes"><div onclick="document.getElementById('dropdown-hospedes').classList.toggle('hidden-view')" class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-pointer transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-user-friends text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 cursor-pointer">Hóspedes</label><input type="text" id="busca-pessoas-display" readonly value="2 Hóspedes" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"><input type="hidden" id="busca-pessoas" value="2"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-hospedes" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-52 overflow-y-auto custom-scroll"><ul id="lista-custom-hospedes" class="flex flex-col"></ul></div></div><button onclick="realizarBusca()" class="bg-slate-900 hover:bg-black text-white px-8 h-16 rounded-xl font-bold text-lg flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap z-30"><i class="fas fa-search mr-2"></i> Buscar</button></div></div></div><div class="max-w-6xl mx-auto px-4 mt-12 relative z-10"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Imóveis Disponíveis</h2></div><div id="lista-imoveis-vitrine" class="flex flex-col gap-5"></div></div></div>
+    <!-- TELA: VITRINE -->
+    <div id="tela-vitrine" class="min-h-screen pb-12 w-full fade-in relative z-10"><div class="bg-orange-500 py-12 sm:py-16 px-4 relative z-30"><div class="max-w-6xl mx-auto relative"><h1 class="text-3xl sm:text-5xl font-bold text-white mb-8 leading-tight text-center sm:text-left drop-shadow-md">Encontre o refúgio perfeito</h1><div class="flex flex-col lg:flex-row gap-3 w-full items-stretch relative"><div class="flex-1 lg:max-w-[350px] relative" id="container-destino"><div class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-text transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-map-marker-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Destino</label><input type="text" id="busca-cidade" autocomplete="off" onfocus="document.getElementById('dropdown-destinos').classList.remove('hidden-view'); filtrarDestinos()" oninput="filtrarDestinos()" placeholder="Para onde você vai?" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 placeholder-slate-300"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-destinos" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-64 custom-scroll"><div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">Cidades Disponíveis</div><ul id="lista-custom-cidades" class="flex flex-col"></ul></div></div><div class="flex-[1.5] bg-white rounded-xl shadow-lg flex items-center px-4 h-16 transition-all border border-transparent hover:border-slate-200 relative cursor-pointer focus-within:ring-2 focus-within:ring-orange-300 z-30" onclick="document.getElementById('busca-datas-range')._flatpickr.open()"><i class="far fa-calendar-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Datas da Viagem</label><input type="text" id="busca-datas-range" placeholder="Entrada  -  Saída" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"></div></div><div class="flex-1 lg:max-w-[220px] relative" id="container-hospedes"><div onclick="document.getElementById('dropdown-hospedes').classList.toggle('hidden-view')" class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-pointer transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-user-friends text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 cursor-pointer">Hóspedes</label><input type="text" id="busca-pessoas-display" readonly value="2 Hóspedes" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"><input type="hidden" id="busca-pessoas" value="2"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-hospedes" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-52 overflow-y-auto custom-scroll"><ul id="lista-custom-hospedes" class="flex flex-col"></ul></div></div><button onclick="realizarBusca()" class="bg-slate-900 hover:bg-black text-white px-8 h-16 rounded-xl font-bold text-lg flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap z-30"><i class="fas fa-search mr-2"></i> Buscar</button></div></div></div><div class="max-w-6xl mx-auto px-4 mt-12 relative z-10"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Imóveis Disponíveis</h2></div><div id="lista-imoveis-vitrine" class="flex flex-col gap-5"></div></div></div>
 
         <!-- TELA: ADMIN -->
         <div id="tela-admin" class="hidden-view max-w-7xl mx-auto px-4 mt-8 fade-in min-h-screen">
@@ -327,25 +325,25 @@
                 </div>
 
                 <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 min-h-[500px] overflow-hidden relative">
-                    
-                    <div id="admin-content-empresa" class="hidden-view fade-in"><div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4"><div><h2 class="text-xl font-bold text-slate-800">Perfil da Empresa</h2><p class="text-xs text-slate-500 mt-1">Configure os dados para os vouchers e relatórios.</p></div></div><div class="p-6 space-y-6"><div><h4 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Logotipo da Agência</h4><div class="flex items-center gap-6"><div id="preview-logo" class="h-24 w-24 flex-shrink-0 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden relative group"></div><div class="flex-1"><div class="border-2 border-dashed border-slate-300 p-4 rounded-xl text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('input-logo-empresa').click()"><i class="fas fa-cloud-upload-alt text-2xl text-slate-400 mb-1"></i><p class="text-sm font-bold text-slate-600">Clique para enviar a logo</p><p class="text-xs text-slate-400 mt-0.5">Formatos JPG, PNG</p><input type="file" id="input-logo-empresa" accept="image/*" class="hidden" onchange="processarLogoEmpresa(event)"></div></div></div></div><div><h4 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Informações de Contato</h4><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-medium text-slate-600 mb-1">Nome Fantasia / Razão Social</label><input type="text" id="emp-nome" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">CPF ou CNPJ</label><input type="text" id="emp-cnpj" oninput="mascaraCpfCnpj(this)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">WhatsApp Comercial</label><input type="tel" id="emp-zap" oninput="mascaraTelefone(this)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">E-mail Comercial</label><input type="email" id="emp-email" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">CRECI</label><input type="text" id="emp-creci" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div></div></div><div class="bg-slate-50 border border-slate-200 rounded-xl p-5"><h5 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">Endereço</h5><div class="grid grid-cols-12 gap-3"><div class="col-span-4 relative"><label class="block text-xs font-medium text-slate-600 mb-1">CEP</label><input type="text" id="emp-cep" oninput="mascaraCEP(this)" onblur="buscarCEPEmpresa(this.value)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"><span id="emp-cep-loading" class="hidden-view absolute right-3 top-8 text-orange-500"><i class="fas fa-spinner fa-spin"></i></span></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Cidade</label><input type="text" id="emp-cidade" readonly class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-slate-200 outline-none text-sm font-medium" /></div><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">UF</label><input type="text" id="emp-uf" readonly class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-slate-200 outline-none text-sm font-medium text-center" /></div><div class="col-span-8"><label class="block text-xs font-medium text-slate-600 mb-1">Rua</label><input type="text" id="emp-rua" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-4"><label class="block text-xs font-medium text-slate-600 mb-1">Número</label><input type="text" id="emp-numero" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Bairro</label><input type="text" id="emp-bairro" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Comp</label><input type="text" id="emp-complemento" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div></div></div><div class="bg-orange-50 border border-orange-200 rounded-xl p-5"><h5 class="block text-[10px] font-bold text-orange-800 uppercase tracking-wider mb-4">Voucher</h5><div class="space-y-3"><div><label class="block text-xs font-bold text-orange-900 mb-1">Cancelamento</label><textarea id="emp-politica" rows="5" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 focus:border-orange-500 outline-none text-sm font-medium resize-none"></textarea></div><div><label class="block text-xs font-bold text-orange-900 mb-1">Info Gerais</label><textarea id="emp-info-gerais" rows="5" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 focus:border-orange-500 outline-none text-sm font-medium resize-none"></textarea></div></div></div><div class="flex justify-end"><button onclick="salvarEmpresa()" class="bg-orange-600 text-white hover:bg-orange-700 px-8 py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95"><i class="fas fa-save mr-2"></i>Salvar</button></div></div></div>
-                    <!-- Imoveis -->
-                    <div id="admin-content-imoveis" class="fade-in"><div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4"><h2 class="text-xl font-bold text-slate-800">Gestão de Imóveis</h2><button onclick="abrirModalCadastro()" class="w-full sm:w-auto bg-slate-800 text-white hover:bg-slate-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md flex items-center justify-center active:scale-95"><i class="fas fa-plus mr-2"></i>Novo Imóvel</button></div><div id="lista-imoveis-admin" class="p-6 space-y-4"></div></div>
-                    <!-- Mapa -->
-                    <div id="admin-content-mapa" class="hidden-view fade-in flex flex-col h-full bg-white"><div class="p-6 border-b border-slate-100 flex flex-col justify-between items-start gap-4 md:flex-row md:items-center"><div><h2 class="text-xl font-bold text-slate-800">Mapa de Reservas</h2><p class="text-xs text-slate-500 mt-1">Clique num dia Livre para adicionar reserva ou bloqueio.</p></div><div class="flex items-center justify-between w-full md:w-auto gap-4"><div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200"><button onclick="mudarMesMapa(-1)" class="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-orange-500 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button><span id="label-mes-mapa" class="text-sm font-bold text-slate-700 px-3 w-32 text-center uppercase tracking-wide"></span><button onclick="mudarMesMapa(1)" class="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-orange-500 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button></div><button onclick="abrirNovaReservaManualLista()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center"><i class="fas fa-calendar-plus mr-2"></i> Nova Reserva</button></div></div><div class="p-6"><div class="flex flex-wrap items-center gap-4 mb-4 text-[11px] font-bold text-slate-500"><div class="flex items-center"><div class="w-3 h-3 bg-white border border-slate-300 rounded-sm mr-1.5"></div> Livre</div><div class="flex items-center"><div class="w-3 h-3 bg-[#fef08a] border border-[#fde047] rounded-sm mr-1.5"></div> Pend</div><div class="flex items-center"><div class="w-3 h-3 bg-[#bbf7d0] border border-[#86efac] rounded-sm mr-1.5"></div> Pago</div><div class="flex items-center"><div class="w-3 h-3 bg-sky-100 border border-sky-300 rounded-sm mr-1.5"></div> Prop</div><div class="flex items-center"><div class="w-3 h-3 bg-slate-100 border border-slate-300 rounded-sm mr-1.5" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, #cbd5e1 3px, #cbd5e1 6px);"></div> Manut</div></div><div id="container-mapa-grid" class="mapa-container-master custom-scroll pb-2"></div></div></div>
-                    <!-- Reservas -->
-                    <div id="admin-content-reservas" class="hidden-view fade-in"><div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4"><div><h2 class="text-xl font-bold text-slate-800">Central de Reservas</h2><p class="text-xs text-slate-500 mt-1">Gerencie todas as locações, usos próprios e manutenções.</p></div><button onclick="abrirNovaReservaManualLista()" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-md flex items-center justify-center active:scale-95"><i class="fas fa-calendar-plus mr-2"></i>Nova Reserva</button></div><div class="p-4 bg-white border-b border-slate-100 flex flex-wrap gap-3 items-end"><div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Período</label><select id="filtro-periodo-reservas" onchange="toggleFiltroPersonalizadoReservas()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 outline-none focus:border-orange-500"><option value="todas">Todas as Datas</option><option value="hoje">Hoje</option><option value="7">Próximos 7 dias</option><option value="30">Próximos 30 dias</option><option value="personalizado">Personalizado...</option></select></div><div id="bloco-filtro-datas" class="hidden-view flex gap-2 items-end"><div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Início</label><input type="date" id="filtro-reserva-inicio" onchange="atualizarCheckoutAutomatico('filtro-reserva-inicio', 'filtro-reserva-fim')" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium outline-none focus:border-orange-500"></div><div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Fim</label><input type="date" id="filtro-reserva-fim" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium outline-none focus:border-orange-500"></div></div><button onclick="renderizarListaReservasAdmin()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"><i class="fas fa-filter mr-1"></i> Filtrar</button><div class="ml-auto w-full sm:w-auto mt-2 sm:mt-0"><button onclick="exportarExcelReservas()" class="w-full bg-[#107c41] hover:bg-[#0b5c30] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center"><i class="fas fa-file-excel mr-1.5"></i> Baixar Excel</button></div></div><div class="p-6 overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead><tr class="bg-slate-100 text-slate-500 text-[10px] uppercase tracking-wider"><th class="p-3 rounded-tl-lg">Data</th><th class="p-3">Reserva Nº</th><th class="p-3">Status</th><th class="p-3">Titular / Finalidade</th><th class="p-3">Acomodação</th><th class="p-3">Datas</th><th class="p-3">Valor Total</th><th class="p-3 rounded-tr-lg text-center">Ações</th></tr></thead><tbody id="lista-reservas-tbody" class="text-sm"></tbody></table></div></div>
-                    
-                    <!-- ABA: ORÇAMENTOS -->
-                    <div id="admin-content-orcamentos" class="hidden-view fade-in flex flex-col h-full bg-slate-50">
-                        <div class="bg-white border-b border-slate-200 shadow-sm">
-                            <div class="p-6 pb-4"><h2 class="text-xl font-bold text-slate-800">CRM de Orçamentos</h2></div>
-                            <div class="flex px-2 tabs-scroll overflow-x-auto">
-                                <button id="btn-tab-orc-novo" onclick="mudarAbaOrcamento('novo')" class="flex-shrink-0 px-6 py-3.5 text-sm font-bold border-b-[3px] border-orange-500 text-orange-600 bg-orange-50/50 whitespace-nowrap outline-none transition-colors"><i class="fas fa-search-dollar mr-2"></i>Novo Orçamento</button>
-                                <button id="btn-tab-orc-hist" onclick="mudarAbaOrcamento('historico')" class="flex-shrink-0 px-6 py-3.5 text-sm font-medium border-b-[3px] border-transparent text-slate-500 hover:bg-slate-100 whitespace-nowrap outline-none transition-colors"><i class="fas fa-history mr-2"></i>Histórico (Follow-up)</button>
+                
+                <div id="admin-content-empresa" class="hidden-view fade-in">
+                    <div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4"><div><h2 class="text-xl font-bold text-slate-800">Perfil da Empresa</h2><p class="text-xs text-slate-500 mt-1">Configure os dados para os vouchers e relatórios.</p></div></div>
+                    <div class="p-6 space-y-6">
+                        
+                        <!-- Link Público -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <h5 class="font-bold text-blue-800 mb-1"><i class="fas fa-globe mr-2"></i>Link da sua Vitrine</h5>
+                                <p class="text-xs text-blue-600">Envie este link para seus clientes reservarem direto com você.</p>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <input type="text" id="link-publico-vitrine" readonly class="w-full sm:w-64 px-3 py-2 rounded-lg border border-blue-200 bg-white text-xs font-medium text-slate-500 outline-none">
+                                <button type="button" onclick="copiarLinkPublico()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition-all whitespace-nowrap"><i class="fas fa-copy mr-1"></i> Copiar</button>
                             </div>
                         </div>
-                        <div class="p-0 overflow-y-auto custom-scroll flex-1 h-[500px]">
+
+                        <div><h4 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Logotipo da Agência</h4>
+                        <div class="flex items-center gap-6"><div id="preview-logo" class="h-24 w-24 flex-shrink-0 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden relative group"></div><div class="flex-1"><div class="border-2 border-dashed border-slate-300 p-4 rounded-xl text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('input-logo-empresa').click()"><i class="fas fa-cloud-upload-alt text-2xl text-slate-400 mb-1"></i><p class="text-sm font-bold text-slate-600">Clique para enviar a logo</p><p class="text-xs text-slate-400 mt-0.5">Formatos JPG, PNG</p><input type="file" id="input-logo-empresa" accept="image/*" class="hidden" onchange="processarLogoEmpresa(event)"></div></div></div></div><div><h4 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Informações de Contato</h4><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-medium text-slate-600 mb-1">Nome Fantasia / Razão Social</label><input type="text" id="emp-nome" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">CPF ou CNPJ</label><input type="text" id="emp-cnpj" oninput="mascaraCpfCnpj(this)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">WhatsApp Comercial</label><input type="tel" id="emp-zap" oninput="mascaraTelefone(this)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">E-mail Comercial</label><input type="email" id="emp-email" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div><label class="block text-xs font-medium text-slate-600 mb-1">CRECI</label><input type="text" id="emp-creci" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div></div></div><div class="bg-slate-50 border border-slate-200 rounded-xl p-5"><h5 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">Endereço</h5><div class="grid grid-cols-12 gap-3"><div class="col-span-4 relative"><label class="block text-xs font-medium text-slate-600 mb-1">CEP</label><input type="text" id="emp-cep" oninput="mascaraCEP(this)" onblur="buscarCEPEmpresa(this.value)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"><span id="emp-cep-loading" class="hidden-view absolute right-3 top-8 text-orange-500"><i class="fas fa-spinner fa-spin"></i></span></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Cidade</label><input type="text" id="emp-cidade" readonly class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-slate-200 outline-none text-sm font-medium" /></div><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">UF</label><input type="text" id="emp-uf" readonly class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-slate-200 outline-none text-sm font-medium text-center" /></div><div class="col-span-8"><label class="block text-xs font-medium text-slate-600 mb-1">Rua</label><input type="text" id="emp-rua" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-4"><label class="block text-xs font-medium text-slate-600 mb-1">Número</label><input type="text" id="emp-numero" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Bairro</label><input type="text" id="emp-bairro" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div><div class="col-span-6"><label class="block text-xs font-medium text-slate-600 mb-1">Comp</label><input type="text" id="emp-complemento" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium" /></div></div></div><div class="bg-orange-50 border border-orange-200 rounded-xl p-5"><h5 class="block text-[10px] font-bold text-orange-800 uppercase tracking-wider mb-4">Voucher</h5><div class="space-y-3"><div><label class="block text-xs font-bold text-orange-900 mb-1">Cancelamento</label><textarea id="emp-politica" rows="5" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 focus:border-orange-500 outline-none text-sm font-medium resize-none"></textarea></div><div><label class="block text-xs font-bold text-orange-900 mb-1">Info Gerais</label><textarea id="emp-info-gerais" rows="5" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 focus:border-orange-500 outline-none text-sm font-medium resize-none"></textarea></div></div></div><div class="flex justify-end"><button onclick="salvarEmpresa()" class="bg-orange-600 text-white hover:bg-orange-700 px-8 py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95"><i class="fas fa-save mr-2"></i>Salvar</button></div></div></div>
                             <div id="orc-content-novo" class="p-6">
                                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6">
                                     <h4 class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4"><i class="fas fa-filter mr-2 text-orange-400"></i>Buscar Disponibilidade</h4>
@@ -427,6 +425,10 @@
         let db, fbDoc, fbSetDoc, fbGetDoc, auth, fbSignIn, fbSignOut;
         let currentUserUid = null; // Variável global para armazenar o UID do usuário
 
+        // Link Público Mágico
+        const urlParams = new URLSearchParams(window.location.search);
+        const agenciaId = urlParams.get('agencia');
+
         async function initFirebase() {
             try {
                 // Importando Firebase Auth e Firestore
@@ -449,21 +451,52 @@
                 fbDoc = doc; fbGetDoc = getDoc; fbSetDoc = setDoc;
                 fbSignIn = signInWithEmailAndPassword; fbSignOut = signOut;
                 
-                // Observador de Login (Tranca ou destranca o app)
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // Usuário logado! Esconde a tela de login e mostra o app
-                        currentUserUid = user.uid; // Salva o ID do usuário
-                        hide('tela-login');
-                        show('app-content');
-                        await carregarDoFirebase();
-                    } else {
-                        // Ninguém logado. Mostra tela de login e esconde o app
-                        currentUserUid = null; // Limpa o ID do usuário
-                        show('tela-login');
-                        hide('app-content');
+                if (agenciaId) {
+                    // MODO VITRINE PÚBLICA (Sem Login)
+                    hide('tela-login');
+                    show('app-content');
+                    if (el('btn-admin')) hide('btn-admin');
+                    if (el('btn-sair-sistema')) hide('btn-sair-sistema');
+                    if (el('nav-divisor')) hide('nav-divisor');
+                    mudarAba('vitrine');
+                    mostrarNotificacao("Carregando imóveis...");
+
+                    try {
+                        const docRef = fbDoc(db, "sistema_saas", agenciaId);
+                        const docSnap = await fbGetDoc(docRef);
+                        if(docSnap.exists()){
+                            const dados = docSnap.data();
+                            imoveisDB = dados.imoveis || [];
+                            empresaDB = dados.empresa || empresaDB;
+                            renderizarVitrine(imoveisDB);
+                            if(empresaDB.nome && el('titulo-app-nav')) {
+                                el('titulo-app-nav').innerHTML = `<span class="text-slate-800">${empresaDB.nome}</span>`;
+                            }
+                            hide('notificacao');
+                        } else {
+                            mostrarAlerta("Link inválido ou agência não encontrada.");
+                            hide('notificacao');
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        mostrarAlerta("O Firebase bloqueou a leitura. Verifique as Regras no painel.");
+                        hide('notificacao');
                     }
-                });
+                } else {
+                    // MODO SISTEMA SAAS NORMAL (Com Login)
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            currentUserUid = user.uid; 
+                            hide('tela-login');
+                            show('app-content');
+                            await carregarDoFirebase();
+                        } else {
+                            currentUserUid = null; 
+                            show('tela-login');
+                            hide('app-content');
+                        }
+                    });
+                }
                 
             } catch (error) {
                 console.error(error);
@@ -659,6 +692,19 @@
             sv('emp-cep', empresaDB.endereco?.cep || ''); sv('emp-cidade', empresaDB.endereco?.cidade || ''); sv('emp-uf', empresaDB.endereco?.uf || ''); sv('emp-rua', empresaDB.endereco?.rua || ''); sv('emp-numero', empresaDB.endereco?.numero || ''); sv('emp-bairro', empresaDB.endereco?.bairro || ''); sv('emp-complemento', empresaDB.endereco?.complemento || '');
             sv('emp-politica', empresaDB.politicaCancelamento || ''); sv('emp-info-gerais', empresaDB.infoGerais || '');
             if(el('preview-logo')) el('preview-logo').innerHTML = empresaDB.logo ? `<img src="${empresaDB.logo}" class="w-full h-full object-contain"><div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><button type="button" onclick="removerLogoEmpresa()" class="bg-red-500 text-white w-8 h-8 rounded-full shadow hover:bg-red-600"><i class="fas fa-trash-alt text-xs"></i></button></div>` : `<i class="fas fa-image text-slate-300 text-3xl"></i>`;
+            
+            if(currentUserUid) {
+                const urlCompleta = window.location.origin + window.location.pathname + '?agencia=' + currentUserUid;
+                sv('link-publico-vitrine', urlCompleta);
+            }
+        }
+
+        function copiarLinkPublico() {
+            const l = val('link-publico-vitrine');
+            if(!l) return;
+            navigator.clipboard.writeText(l).then(()=>mostrarNotificacao("Link copiado! Envie no WhatsApp.")).catch(e=>{
+                 const a=document.createElement('textarea'); a.value=l; document.body.appendChild(a); a.select(); document.execCommand('copy'); document.body.removeChild(a); mostrarNotificacao("Link copiado!");
+            });
         }
 
         function salvarEmpresa() {
