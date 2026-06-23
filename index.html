@@ -425,6 +425,7 @@
         let categoriasDB = ["Faxina", "Lavanderia", "Manutenção", "Luz", "Condomínio", "Outros"];
 
         let db, fbDoc, fbSetDoc, fbGetDoc, auth, fbSignIn, fbSignOut;
+        let currentUserUid = null; // Variável global para armazenar o UID do usuário
 
         async function initFirebase() {
             try {
@@ -452,11 +453,13 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         // Usuário logado! Esconde a tela de login e mostra o app
+                        currentUserUid = user.uid; // Salva o ID do usuário
                         hide('tela-login');
                         show('app-content');
                         await carregarDoFirebase();
                     } else {
                         // Ninguém logado. Mostra tela de login e esconde o app
+                        currentUserUid = null; // Limpa o ID do usuário
                         show('tela-login');
                         hide('app-content');
                     }
@@ -531,9 +534,11 @@
 
         // ================= CARREGAMENTO DE DADOS =================
         async function carregarDoFirebase() {
+            if (!currentUserUid) return; // Se não tiver UID, não tenta ler
             mostrarNotificacao("Baixando dados da nuvem...");
             try {
-                const docRef = fbDoc(db, "sistema", "dados_master");
+                // A MÁGICA DO SAAS: Agora a pasta é o UID do usuário!
+                const docRef = fbDoc(db, "sistema_saas", currentUserUid);
                 const docSnap = await fbGetDoc(docRef);
                 
                 if (docSnap.exists()) {
@@ -565,9 +570,10 @@
         }
 
         async function sincronizarNuvem() {
-            if(!db) return;
+            if(!db || !currentUserUid) return; // Só salva se tiver usuário
             try {
-                await fbSetDoc(fbDoc(db, "sistema", "dados_master"), {
+                // Salva na pasta do usuário!
+                await fbSetDoc(fbDoc(db, "sistema_saas", currentUserUid), {
                     imoveis: imoveisDB,
                     empresa: empresaDB,
                     orcamentos: orcamentosDB,
