@@ -452,8 +452,13 @@
             // Entrou pelo LINK DA VITRINE MÁGICO (Público)
             isPublicVitrine = true;
             hide('tela-login');
-            hide('btn-admin'); // Esconde o botão admin para o hóspede
-            hide('btn-logout');
+            
+            // NOVO: Esconde toda a div (caixa) que contém os botões Vitrine/Admin/Sair
+            let containerBotoesNavegacao = el('btn-admin')?.parentElement;
+            if (containerBotoesNavegacao) {
+                containerBotoesNavegacao.classList.add('hidden-view');
+            }
+            
             carregarDadosFirebase(agenciaId);
         } else {
             // Fluxo Normal (Dono da Agência)
