@@ -441,6 +441,8 @@
         // INSTANCIAS DO FLATPICKR (Admin)
         let fpReservaCheckin = null;
         let fpReservaCheckout = null;
+        let fpOrcCheckin = null;
+        let fpOrcCheckout = null;
 
         // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
@@ -572,9 +574,23 @@
             if(el('filtro-reserva-inicio')) flatpickr("#filtro-reserva-inicio", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
             if(el('filtro-reserva-fim')) flatpickr("#filtro-reserva-fim", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
 
-            // 4. Orçamentos
-            if(el('busca-orc-checkin')) flatpickr("#busca-orc-checkin", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-            if(el('busca-orc-checkout')) flatpickr("#busca-orc-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+            // 4. Orçamentos (Agora dinâmico com trava inteligente)
+            if(el('busca-orc-checkin') && el('busca-orc-checkout')) {
+                fpOrcCheckin = flatpickr("#busca-orc-checkin", { 
+                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if(selectedDates[0]) {
+                            let minOut = new Date(selectedDates[0]);
+                            minOut.setDate(minOut.getDate() + 1);
+                            fpOrcCheckout.set("minDate", minOut);
+                            if(fpOrcCheckout.selectedDates[0] && fpOrcCheckout.selectedDates[0] <= selectedDates[0]) {
+                                fpOrcCheckout.clear();
+                            }
+                        }
+                    }
+                });
+                fpOrcCheckout = flatpickr("#busca-orc-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+            }
 
             // 5. Data Nascimento (Titular) e Despesas
             if(el('reserva-titular-nasc')) flatpickr("#reserva-titular-nasc", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
