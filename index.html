@@ -7,132 +7,207 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden-view { display: none !important; }
+        
+        /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Grid do Mapa - Elementor Style */
-        .mapa-grid { display: grid; grid-template-columns: 250px repeat(15, minmax(40px, 1fr)); border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-        .mapa-cell { border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
-        .mapa-header { background-color: #f8fafc; font-weight: 600; color: #64748b; }
-        .imovel-col { background-color: white; justify-content: flex-start; padding-left: 16px; font-weight: 600; color: #1e293b; flex-direction: column; align-items: flex-start; gap: 2px;}
-    </style>
+        /* Menu Lateral Ativo */
+        .menu-item-active { background-color: #fff7ed; color: #ea580c; border-left: 4px solid #ea580c; font-weight: 700; }
+        .menu-item-inactive { color: #64748b; font-weight: 600; border-left: 4px solid transparent; }
+        .menu-item-inactive:hover { background-color: #f8fafc; color: #334155; }
 
-    <!-- FIREBASE COMPAT -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+        /* Estilos do Mapa de Reservas */
+        .mapa-grid { display: grid; grid-template-columns: 280px repeat(15, minmax(40px, 1fr)); border: 1px solid #f1f5f9; border-radius: 8px; background: white; }
+        .mapa-cell { border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .mapa-header { background-color: #f8fafc; font-weight: 700; color: #64748b; font-size: 11px; }
+        .imovel-col { justify-content: center; padding-left: 16px; flex-direction: column; align-items: flex-start; gap: 2px; }
+        
+        /* Cores Legenda Mapa */
+        .leg-livre { border: 1px solid #e2e8f0; background: white; }
+        .leg-pend { background: #fde047; }
+        .leg-pago { background: #86efac; }
+        .leg-prop { background: #7dd3fc; }
+        .leg-manut { background: #e2e8f0; background-image: linear-gradient(45deg, #cbd5e1 25%, transparent 25%, transparent 50%, #cbd5e1 50%, #cbd5e1 75%, transparent 75%, transparent); background-size: 10px 10px; }
+    </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800">
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-home text-3xl text-white"></i>
-                </div>
-                <h1 class="text-2xl font-black text-slate-800">Laranja Stays</h1>
-                <p class="text-sm text-slate-500 mt-1">Acesse sua conta para continuar</p>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Modal Novo Imóvel -->
+    <div id="modal-imovel" class="fixed inset-0 bg-slate-900/40 z-[100] hidden-view flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden fade-in">
+            <div class="flex justify-between items-center p-5 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-[#1e293b]">Novo Imóvel</h3>
+                <button onclick="fecharModal('imovel')" class="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"><i class="fas fa-times"></i></button>
             </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1 ml-1 uppercase tracking-wider">E-mail</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-envelope text-slate-400 text-sm"></i></div>
-                        <input type="email" id="login-email" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition-all text-sm" placeholder="seu@email.com">
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6 bg-slate-50/50">
+                <!-- Abas do Modal -->
+                <div class="flex gap-6 border-b border-slate-200 mb-6 px-2">
+                    <button class="pb-3 text-sm font-bold text-orange-600 border-b-2 border-orange-500 flex items-center gap-2"><i class="fas fa-user-tie"></i> Proprietário</button>
+                    <button class="pb-3 text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-2"><i class="fas fa-home"></i> Imóvel</button>
+                    <button class="pb-3 text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-2"><i class="fas fa-images"></i> Fotos</button>
+                    <button class="pb-3 text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Tarifas</button>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm mb-6">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Dados do Titular</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Nome</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">CPF/CNPJ</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">WhatsApp</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">E-mail</label><input type="email" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"></div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1 ml-1 uppercase tracking-wider">Senha</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-lock text-slate-400 text-sm"></i></div>
-                        <input type="password" id="login-senha" class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition-all text-sm" placeholder="••••••••">
-                        <button type="button" onclick="toggleSenha()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-orange-500 focus:outline-none"><i id="icone-senha" class="fas fa-eye"></i></button>
-                    </div>
+
+                <div class="bg-orange-50/50 p-6 rounded-xl border border-orange-100">
+                    <h4 class="text-sm font-bold text-orange-800 mb-1">Gestão e Repasse</h4>
+                    <p class="text-xs text-orange-600 mb-4">Retenção da agência?</p>
+                    <div class="w-1/3"><label class="block text-xs font-semibold text-orange-700 mb-1.5">Comissão (%)</label><input type="number" value="20" class="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm font-bold text-orange-700 outline-none focus:border-orange-500 bg-white shadow-sm"></div>
                 </div>
-                <button onclick="fazerLogin()" id="btn-login" class="w-full bg-orange-600 text-white hover:bg-orange-700 py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-200 active:scale-95 transition-all mt-6 flex justify-center items-center">
-                    Entrar no Sistema
-                </button>
+            </div>
+
+            <div class="p-5 border-t border-slate-100 flex justify-between items-center bg-white">
+                <button onclick="fecharModal('imovel')" class="text-sm font-bold text-slate-500 hover:text-slate-800 px-4 py-2">Cancelar</button>
+                <button onclick="salvarModal('imovel')" class="bg-[#1e293b] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 shadow-md transition-all flex items-center"><i class="fas fa-save mr-2"></i> Salvar Imóvel</button>
             </div>
         </div>
     </div>
 
-    <div id="app-container" class="hidden-view h-full flex flex-col">
-        <header id="main-header" class="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-40">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-home text-white text-sm"></i>
-                </div>
-                <span class="font-black text-xl tracking-tight text-slate-800">Laranja<span class="text-orange-500 font-medium">Stays</span></span>
+    <!-- Modal Nova Reserva -->
+    <div id="modal-reserva" class="fixed inset-0 bg-slate-900/40 z-[100] hidden-view flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] overflow-hidden fade-in">
+            <div class="flex justify-between items-center p-5 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-[#1e293b]">Nova Reserva</h3>
+                <button onclick="fecharModal('reserva')" class="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="flex items-center gap-3">
-                <div id="nav-buttons" class="flex items-center gap-2">
-                    <button onclick="alternarView('vitrine')" id="btn-nav-vitrine" class="px-4 py-1.5 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"><i class="fas fa-search mr-2 text-slate-400"></i>Vitrine</button>
-                    <button onclick="alternarView('admin')" id="btn-nav-admin" class="px-4 py-1.5 text-sm font-semibold rounded-full bg-white text-orange-600 border border-orange-200 shadow-sm transition-all"><i class="fas fa-cog mr-2"></i>Admin</button>
+            <div class="flex-1 overflow-y-auto custom-scroll p-6 bg-slate-50/50">
+                <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm mb-6">
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Imóvel</label>
+                        <select class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-orange-500 bg-white"><option>Selecione...</option><option>Flat Premium Vista Mar</option></select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Check-in</label><div class="relative"><input type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 text-slate-600"></div></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Check-out</label><div class="relative"><input type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 text-slate-600"></div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Situação</label><select class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-orange-500 bg-white"><option>Pendente (Receber)</option><option>Pago</option><option>Uso Proprietário</option></select></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Valor Total (R$)</label><input type="text" class="w-full border border-orange-200 bg-orange-50/30 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 font-bold text-slate-800"></div>
+                    </div>
                 </div>
-                <button id="btn-logout" onclick="fazerLogout()" class="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors" title="Sair">
-                    <i class="fas fa-sign-out-alt text-sm"></i>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-[#1e293b] mb-4">Hóspede Titular</h4>
+                    <div class="space-y-4">
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome *</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">CPF</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">WhatsApp</label><input type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-100 flex justify-between items-center bg-white">
+                <button onclick="fecharModal('reserva')" class="text-sm font-bold text-slate-500 hover:text-slate-800 px-4 py-2">Fechar</button>
+                <button onclick="salvarModal('reserva')" class="bg-[#1e293b] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 shadow-md transition-all flex items-center"><i class="fas fa-save mr-2"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="h-full flex flex-col">
+        <header id="main-header" class="bg-white h-[72px] border-b border-slate-100 flex items-center justify-between px-6 shrink-0 z-40 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#ea580c] rounded-xl flex items-center justify-center shadow-lg shadow-orange-200">
+                    <i class="fas fa-home text-white text-lg"></i>
+                </div>
+                <span class="font-black text-2xl tracking-tight text-[#1e293b]">Laranja<span class="text-[#ea580c] font-bold">Stays</span></span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div id="nav-buttons" class="flex items-center gap-2 bg-slate-50 p-1 rounded-full border border-slate-200">
+                    <button onclick="alternarVisao('vitrine')" id="btn-nav-vitrine" class="px-5 py-2 text-sm font-bold rounded-full text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2"><i class="fas fa-search"></i>Vitrine</button>
+                    <button onclick="alternarVisao('admin')" id="btn-nav-admin" class="px-5 py-2 text-sm font-bold rounded-full bg-white text-[#ea580c] shadow-sm border border-slate-200 transition-all flex items-center gap-2"><i class="fas fa-cog"></i>Admin</button>
+                </div>
+                <button id="btn-logout" onclick="mostrarAviso('Logout simulado!')" class="ml-2 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all" title="Sair da Conta">
+                    <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-hidden relative bg-[#f4f6f8]">
+        <main class="flex-1 overflow-hidden relative bg-[#f8fafc]">
             
+            <!-- VITRINE (Pública) -->
             <div id="view-vitrine" class="hidden-view h-full overflow-y-auto custom-scroll fade-in">
-                <div class="bg-orange-500 text-white pt-12 pb-24 px-6 relative overflow-hidden">
-                    <div class="max-w-6xl mx-auto relative z-10">
-                        <h1 class="text-4xl md:text-5xl font-bold mb-8">Encontre o refúgio perfeito</h1>
+                <!-- Cabeçalho Laranja da Vitrine -->
+                <div class="bg-[#ea580c] pt-16 pb-28 px-6 relative">
+                    <div class="max-w-[1200px] mx-auto">
+                        <h1 class="text-4xl md:text-[44px] font-black text-white mb-10 tracking-tight">Encontre o refúgio perfeito</h1>
                         
-                        <div class="bg-white p-2 rounded-xl shadow-xl flex flex-col md:flex-row gap-2">
-                            <div class="flex-1 bg-white rounded-lg px-4 py-3 border border-slate-200">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Destino</label>
-                                <div class="flex items-center text-slate-700">
-                                    <i class="fas fa-map-marker-alt text-slate-400 mr-2"></i>
-                                    <input type="text" placeholder="Para onde você vai?" class="bg-transparent border-none outline-none w-full text-sm font-semibold">
+                        <!-- Barra de Busca -->
+                        <div class="bg-white p-2 rounded-2xl shadow-xl flex flex-col md:flex-row gap-2 items-center">
+                            <div class="flex-1 w-full bg-slate-50 rounded-xl px-5 py-3.5 border border-slate-200 flex items-center">
+                                <i class="fas fa-map-marker-alt text-slate-400 mr-3 text-lg"></i>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-[#ea580c] uppercase tracking-widest mb-0.5">Destino</label>
+                                    <input type="text" placeholder="Para onde você vai?" class="bg-transparent border-none outline-none w-full text-sm font-bold text-slate-700 placeholder-slate-400">
                                 </div>
                             </div>
-                            <div class="flex-1 bg-white rounded-lg px-4 py-3 border border-slate-200">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Datas da Viagem</label>
-                                <div class="flex items-center text-slate-700">
-                                    <i class="fas fa-calendar text-slate-400 mr-2"></i>
-                                    <input type="text" placeholder="Entrada  -  Saída" class="bg-transparent border-none outline-none w-full text-sm font-semibold">
+                            <div class="flex-1 w-full bg-slate-50 rounded-xl px-5 py-3.5 border border-slate-200 flex items-center">
+                                <i class="fas fa-calendar-alt text-slate-400 mr-3 text-lg"></i>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-[#ea580c] uppercase tracking-widest mb-0.5">Datas da Viagem</label>
+                                    <input type="text" placeholder="Entrada  -  Saída" class="bg-transparent border-none outline-none w-full text-sm font-bold text-slate-700 placeholder-slate-400">
                                 </div>
                             </div>
-                            <div class="flex-1 bg-white rounded-lg px-4 py-3 border border-slate-200">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hóspedes</label>
-                                <div class="flex items-center text-slate-700">
-                                    <i class="fas fa-user-friends text-slate-400 mr-2"></i>
-                                    <select class="bg-transparent border-none outline-none w-full text-sm font-semibold"><option>2 Hóspedes</option></select>
+                            <div class="flex-1 w-full bg-slate-50 rounded-xl px-5 py-3.5 border border-slate-200 flex items-center">
+                                <i class="fas fa-user-friends text-slate-400 mr-3 text-lg"></i>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-[#ea580c] uppercase tracking-widest mb-0.5">Hóspedes</label>
+                                    <select class="bg-transparent border-none outline-none w-full text-sm font-bold text-slate-700 cursor-pointer"><option>2 Hóspedes</option></select>
                                 </div>
                             </div>
-                            <button class="bg-[#1e293b] text-white px-8 py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors md:w-auto w-full"><i class="fas fa-search mr-2"></i> Buscar</button>
+                            <button onclick="mostrarAviso('Buscando propriedades...')" class="bg-[#0f172a] text-white px-10 py-5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors w-full md:w-auto flex items-center justify-center gap-2 h-full"><i class="fas fa-search"></i> Buscar</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="max-w-6xl mx-auto px-6 py-12 relative z-20">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Imóveis Disponíveis</h2>
-                    <div id="lista-imoveis-vitrine" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Card Estilo Elementor -->
-                        <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm flex flex-col h-full">
-                            <div class="h-48 bg-slate-200 relative flex items-center justify-center text-slate-400 text-2xl font-bold">600 × 600</div>
-                            <div class="p-5 flex flex-col flex-1">
-                                <h3 class="font-bold text-lg text-[#0f52ba] mb-1">Imóvel de Teste</h3>
-                                <p class="text-xs text-[#0f52ba] underline mb-3 cursor-pointer">Sua Cidade</p>
-                                <p class="text-sm font-bold text-slate-700 mb-1">Apartamento</p>
-                                <p class="text-xs text-slate-500 mb-4">Mude este imóvel no painel Admin.</p>
-                                <div class="mt-auto flex items-end justify-between">
-                                    <div><span class="text-[10px] font-bold text-slate-400 uppercase block">A partir de</span><span class="font-black text-xl text-slate-800">R$ 250,00</span></div>
-                                    <button class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow flex items-center"><i class="fab fa-whatsapp mr-2 text-lg"></i> Reservar</button>
+                <!-- Lista de Imóveis Vitrine -->
+                <div class="max-w-[1200px] mx-auto px-6 py-12">
+                    <h2 class="text-2xl font-black text-[#1e293b] mb-8">Imóveis Disponíveis</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Card Imóvel 1 -->
+                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all flex flex-col group">
+                            <div class="h-56 bg-slate-200 relative overflow-hidden">
+                                <div class="absolute inset-0 bg-slate-300 flex items-center justify-center text-slate-400 font-bold text-xl"><i class="fas fa-image mr-2"></i> Sem foto</div>
+                            </div>
+                            <div class="p-6 flex flex-col flex-1">
+                                <h3 class="font-black text-xl text-[#0f52ba] mb-1">Imóvel de Teste</h3>
+                                <p class="text-sm text-[#0f52ba] underline decoration-blue-200 underline-offset-2 mb-4 cursor-pointer hover:text-blue-700">Sua Cidade</p>
+                                <div class="flex items-center gap-4 mb-6">
+                                    <span class="text-sm font-bold text-slate-700 flex items-center gap-1.5"><i class="fas fa-building text-slate-400"></i> Apto</span>
+                                </div>
+                                <div class="mt-auto flex items-end justify-between pt-4 border-t border-slate-100">
+                                    <div>
+                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">A partir de</span>
+                                        <span class="font-black text-2xl text-[#1e293b]">R$ 250,00</span>
+                                    </div>
+                                    <button onclick="mostrarAviso('Abrindo WhatsApp do proprietário...')" class="bg-[#22c55e] text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-green-200 hover:bg-green-600 transition-all flex items-center gap-2">
+                                        <i class="fab fa-whatsapp text-lg"></i> Reservar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -142,120 +217,130 @@
 
             <div id="view-admin" class="h-full flex fade-in max-w-[1400px] mx-auto p-4 sm:p-6 gap-6">
                 
-                <!-- Sidebar Admin - Estilo Elementor -->
-                <aside class="w-64 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden shrink-0">
-                    <div class="bg-[#1e293b] p-6 flex flex-col items-center relative text-white">
-                        <div class="w-14 h-14 bg-[#334155] rounded-full flex items-center justify-center mb-3">
-                            <i class="fas fa-briefcase text-orange-500 text-xl"></i>
+                <!-- Sidebar Esquerda -->
+                <aside class="w-[280px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden shrink-0">
+                    <div class="bg-[#0f172a] p-8 flex flex-col items-center relative text-white">
+                        <div class="w-16 h-16 bg-[#1e293b] rounded-full flex items-center justify-center mb-4 shadow-inner border border-slate-700">
+                            <i class="fas fa-briefcase text-[#ea580c] text-2xl"></i>
                         </div>
-                        <h3 class="font-bold text-sm">Painel Gestor</h3>
-                        <p class="text-[10px] text-slate-400">Laranja Stays PMS</p>
-                        <button class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#1e293b] border border-slate-700 text-white rounded-full flex items-center justify-center z-10 hover:bg-slate-700"><i class="fas fa-chevron-left text-[10px]"></i></button>
+                        <h3 class="font-black text-lg tracking-tight">Painel Gestor</h3>
+                        <p class="text-xs text-slate-400 font-semibold mt-1">Laranja Stays PMS</p>
+                        <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#0f172a] border border-slate-700 text-white rounded-full flex items-center justify-center z-10"><i class="fas fa-chevron-left text-[10px]"></i></div>
                     </div>
                     
-                    <nav class="flex-1 py-4 space-y-1 px-3 overflow-y-auto custom-scroll" id="menu-lateral">
-                        <button onclick="mudarAbaInternaAdmin('empresa')" id="btn-aba-empresa" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-id-card w-6 text-center text-slate-400 mr-2"></i> Minha Empresa</button>
-                        <button onclick="mudarAbaInternaAdmin('imoveis')" id="btn-aba-imoveis" class="w-full flex items-center px-4 py-3 text-sm font-bold rounded-lg bg-orange-50 text-orange-600 border-l-4 border-orange-500 transition-all"><i class="fas fa-building w-6 text-center text-orange-500 mr-2"></i> Meus Imóveis</button>
-                        <button onclick="mudarAbaInternaAdmin('mapa')" id="btn-aba-mapa" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-calendar-alt w-6 text-center text-slate-400 mr-2"></i> Mapa de Reservas</button>
-                        <button onclick="mudarAbaInternaAdmin('reservas')" id="btn-aba-reservas" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-list-ul w-6 text-center text-slate-400 mr-2"></i> Lista de Reservas</button>
-                        <button onclick="mudarAbaInternaAdmin('orcamentos')" id="btn-aba-orcamentos" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-file-invoice-dollar w-6 text-center text-slate-400 mr-2"></i> Orçamentos</button>
-                        <div class="my-2 border-t border-slate-100 mx-2"></div>
-                        <button onclick="mudarAbaInternaAdmin('despesas')" id="btn-aba-despesas" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-receipt w-6 text-center text-slate-400 mr-2"></i> Despesas (Gastos)</button>
-                        <button onclick="mudarAbaInternaAdmin('dre')" id="btn-aba-dre" class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-chart-line w-6 text-center text-slate-400 mr-2"></i> Resultados (DRE)</button>
+                    <nav class="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto custom-scroll" id="menu-lateral">
+                        <button onclick="mudarAbaInternaAdmin('empresa')" id="btn-aba-empresa" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-id-card w-6 text-center text-lg mr-3"></i> Minha Empresa</button>
+                        <button onclick="mudarAbaInternaAdmin('imoveis')" id="btn-aba-imoveis" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-active"><i class="fas fa-building w-6 text-center text-lg mr-3"></i> Meus Imóveis</button>
+                        <button onclick="mudarAbaInternaAdmin('mapa')" id="btn-aba-mapa" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-calendar-alt w-6 text-center text-lg mr-3"></i> Mapa de Reservas</button>
+                        <button onclick="mudarAbaInternaAdmin('reservas')" id="btn-aba-reservas" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-list-ul w-6 text-center text-lg mr-3"></i> Lista de Reservas</button>
+                        <button onclick="mudarAbaInternaAdmin('orcamentos')" id="btn-aba-orcamentos" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-file-invoice-dollar w-6 text-center text-lg mr-3"></i> Orçamentos</button>
+                        
+                        <div class="my-4 border-t border-slate-100 mx-2"></div>
+                        
+                        <button onclick="mudarAbaInternaAdmin('despesas')" id="btn-aba-despesas" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-receipt w-6 text-center text-lg mr-3"></i> Despesas (Gastos)</button>
+                        <button onclick="mudarAbaInternaAdmin('dre')" id="btn-aba-dre" class="w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive"><i class="fas fa-chart-line w-6 text-center text-lg mr-3"></i> Resultados (DRE)</button>
                     </nav>
                 </aside>
 
-                <!-- Área de Conteúdo -->
+                <!-- Área de Conteúdo Direito -->
                 <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col relative">
                     
-                    <!-- 1. GAVETA EMPRESA -->
+                    <!-- 1. GAVETA: MINHA EMPRESA -->
                     <div id="admin-content-empresa" class="hidden-view p-8 h-full overflow-y-auto custom-scroll">
-                        <h2 class="text-xl font-bold text-slate-800 mb-6">Minha Empresa</h2>
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 shadow-sm flex items-center justify-between">
+                        <h2 class="text-2xl font-black text-[#1e293b] mb-2">Minha Empresa</h2>
+                        <p class="text-sm text-slate-500 font-semibold mb-8">Gerencie os dados da sua agência e seu link público.</p>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8 flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-blue-800"><i class="fas fa-link mr-2"></i>Link da sua Vitrine (Público)</h3>
-                                <p class="text-xs text-blue-600 mt-1">Copie este link para enviar aos clientes.</p>
+                                <h3 class="text-base font-bold text-blue-900 flex items-center gap-2"><i class="fas fa-globe text-blue-600"></i> Link da sua Vitrine (Público)</h3>
+                                <p class="text-sm text-blue-700 mt-1 font-semibold">Envie este link para seus clientes verem seus imóveis disponíveis.</p>
                             </div>
-                            <button onclick="copiarLinkVitrine()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700">Copiar Link</button>
+                            <button onclick="mostrarAviso('Link copiado com sucesso!')" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition-all">Copiar Link</button>
                         </div>
-                        <!-- Campos (Pode deixar como estava) -->
                     </div>
 
-                    <!-- 2. GAVETA IMÓVEIS (Identico ao Print) -->
+                    <!-- 2. GAVETA: MEUS IMÓVEIS -->
                     <div id="admin-content-imoveis" class="p-8 h-full flex flex-col">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-bold text-[#1e293b]">Gestão de Imóveis</h2>
-                            <button class="bg-[#1e293b] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-slate-800 transition-colors flex items-center"><i class="fas fa-plus mr-2"></i> Novo Imóvel</button>
+                        <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+                            <h2 class="text-2xl font-black text-[#1e293b]">Gestão de Imóveis</h2>
+                            <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                            <button onclick="abrirModal('imovel')" class="bg-[#0f172a] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-slate-800 transition-colors flex items-center gap-2"><i class="fas fa-plus"></i> Novo Imóvel</button>
                         </div>
+                        
                         <div class="space-y-4 overflow-y-auto custom-scroll pr-2 pb-4">
-                            <!-- Card de Lista Imóvel 1 -->
-                            <div class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-16 h-12 bg-blue-100 rounded object-cover flex items-center justify-center text-blue-300 text-xs"><i class="fas fa-image"></i></div>
+                            <!-- Linha Imóvel 1 -->
+                            <div class="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:border-slate-300 transition-all">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-16 h-12 bg-[#eff6ff] rounded-lg border border-blue-100 flex items-center justify-center text-blue-300"><i class="fas fa-image text-xl"></i></div>
                                     <div>
-                                        <h4 class="font-bold text-[#1e293b] text-sm">Flat Premium Vista Mar (Apto 402)</h4>
-                                        <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-500 font-medium">
-                                            <span><i class="fas fa-building mr-1"></i> Apartamento</span>
-                                            <span><i class="fas fa-user-friends mr-1"></i> Até 5</span>
-                                            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold"><i class="fas fa-check-circle mr-1"></i> 2 Tarifas</span>
+                                        <h4 class="font-bold text-[#0f172a] text-base mb-1">Flat Premium Vista Mar (Apto 402)</h4>
+                                        <div class="flex items-center gap-4 text-xs text-slate-500 font-bold">
+                                            <span class="flex items-center gap-1.5"><i class="fas fa-building text-slate-400"></i> Apartamento</span>
+                                            <span class="flex items-center gap-1.5"><i class="fas fa-user-friends text-slate-400"></i> Até 5</span>
+                                            <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 border border-green-100"><i class="fas fa-check-circle"></i> 2 Tarifas</span>
                                         </div>
                                     </div>
                                 </div>
+                                <!-- BOTÕES DE AÇÃO COM ONCLICK ADICIONADO -->
                                 <div class="flex gap-2">
-                                    <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-slate-200 flex items-center"><i class="fas fa-edit mr-1.5"></i> Editar</button>
-                                    <button class="bg-red-50 hover:bg-red-100 text-red-500 w-8 h-8 flex items-center justify-center rounded-lg transition border border-red-100"><i class="fas fa-trash-alt"></i></button>
+                                    <button onclick="abrirModal('imovel')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-slate-200 flex items-center gap-2"><i class="fas fa-edit"></i> Editar</button>
+                                    <button onclick="mostrarAviso('Imóvel excluído (simulação)')" class="bg-red-50 hover:bg-red-100 text-red-500 w-10 h-10 flex items-center justify-center rounded-xl transition-all border border-red-100"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>
-                            <!-- Card de Lista Imóvel 2 -->
-                            <div class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-16 h-12 bg-blue-100 rounded object-cover flex items-center justify-center text-blue-300 text-xs"><i class="fas fa-image"></i></div>
+
+                            <!-- Linha Imóvel 2 -->
+                            <div class="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:border-slate-300 transition-all">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-16 h-12 bg-[#eff6ff] rounded-lg border border-blue-100 flex items-center justify-center text-blue-300"><i class="fas fa-image text-xl"></i></div>
                                     <div>
-                                        <h4 class="font-bold text-[#1e293b] text-sm">Lacqua diRoma (Apto 101)</h4>
-                                        <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-500 font-medium">
-                                            <span><i class="fas fa-building mr-1"></i> Apartamento</span>
-                                            <span><i class="fas fa-user-friends mr-1"></i> Até 5</span>
-                                            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold"><i class="fas fa-check-circle mr-1"></i> 2 Tarifas</span>
+                                        <h4 class="font-bold text-[#0f172a] text-base mb-1">Lacqua diRoma (Apto 101)</h4>
+                                        <div class="flex items-center gap-4 text-xs text-slate-500 font-bold">
+                                            <span class="flex items-center gap-1.5"><i class="fas fa-building text-slate-400"></i> Apartamento</span>
+                                            <span class="flex items-center gap-1.5"><i class="fas fa-user-friends text-slate-400"></i> Até 5</span>
+                                            <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 border border-green-100"><i class="fas fa-check-circle"></i> 2 Tarifas</span>
                                         </div>
                                     </div>
                                 </div>
+                                <!-- BOTÕES DE AÇÃO COM ONCLICK ADICIONADO -->
                                 <div class="flex gap-2">
-                                    <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-slate-200 flex items-center"><i class="fas fa-edit mr-1.5"></i> Editar</button>
-                                    <button class="bg-red-50 hover:bg-red-100 text-red-500 w-8 h-8 flex items-center justify-center rounded-lg transition border border-red-100"><i class="fas fa-trash-alt"></i></button>
+                                    <button onclick="abrirModal('imovel')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-slate-200 flex items-center gap-2"><i class="fas fa-edit"></i> Editar</button>
+                                    <button onclick="mostrarAviso('Imóvel excluído (simulação)')" class="bg-red-50 hover:bg-red-100 text-red-500 w-10 h-10 flex items-center justify-center rounded-xl transition-all border border-red-100"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. GAVETA MAPA (Identico ao Print) -->
+                    <!-- 3. GAVETA: MAPA -->
                     <div id="admin-content-mapa" class="hidden-view p-8 h-full flex flex-col">
                         <div class="flex justify-between items-start mb-6">
                             <div>
-                                <h2 class="text-xl font-bold text-[#1e293b]">Mapa de Reservas</h2>
-                                <p class="text-xs text-slate-500 mt-1">Clique num dia Livre para adicionar reserva ou bloqueio.</p>
+                                <h2 class="text-2xl font-black text-[#1e293b]">Mapa de Reservas</h2>
+                                <p class="text-sm text-slate-500 mt-1 font-semibold">Clique num dia Livre para adicionar reserva ou bloqueio.</p>
                             </div>
                             <div class="flex gap-4">
-                                <div class="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                                    <button class="px-3 py-1.5 hover:bg-slate-50 border-r border-slate-200 text-slate-600"><i class="fas fa-chevron-left text-xs"></i></button>
-                                    <div class="px-4 py-1.5 text-sm font-bold text-[#1e293b] flex items-center justify-center min-w-[120px]">JUNHO 2026</div>
-                                    <button class="px-3 py-1.5 hover:bg-slate-50 border-l border-slate-200 text-slate-600"><i class="fas fa-chevron-right text-xs"></i></button>
+                                <div class="flex border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm p-1">
+                                    <button onclick="mostrarAviso('Mês anterior')" class="px-3 py-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><i class="fas fa-chevron-left text-xs"></i></button>
+                                    <div class="px-4 py-1.5 text-sm font-black text-[#1e293b] flex items-center justify-center min-w-[130px]">JUNHO 2026</div>
+                                    <button onclick="mostrarAviso('Próximo mês')" class="px-3 py-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><i class="fas fa-chevron-right text-xs"></i></button>
                                 </div>
-                                <button class="bg-[#ea580c] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-orange-700 transition flex items-center"><i class="fas fa-plus mr-2"></i> Nova Reserva</button>
+                                <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                                <button onclick="abrirModal('reserva')" class="bg-[#ea580c] text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-orange-600 transition-colors flex items-center gap-2"><i class="fas fa-plus"></i> Nova Reserva</button>
                             </div>
                         </div>
                         
-                        <div class="flex items-center gap-4 text-[11px] font-bold text-slate-600 mb-4 px-2">
-                            <div class="flex items-center gap-1.5"><div class="w-3 h-3 border border-slate-200 bg-white rounded-sm"></div> Livre</div>
-                            <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-yellow-300 rounded-sm"></div> Pend</div>
-                            <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-green-300 rounded-sm"></div> Pago</div>
-                            <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-300 rounded-sm"></div> Prop</div>
-                            <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-slate-200 rounded-sm diagonal-stripes"></div> Manut</div>
+                        <div class="flex items-center gap-6 text-xs font-bold text-slate-600 mb-6 px-1">
+                            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded-[4px] leg-livre"></div> Livre</div>
+                            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded-[4px] leg-pend"></div> Pend</div>
+                            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded-[4px] leg-pago"></div> Pago</div>
+                            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded-[4px] leg-prop"></div> Prop</div>
+                            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded-[4px] leg-manut"></div> Manut</div>
                         </div>
 
-                        <div class="overflow-x-auto flex-1 custom-scroll pb-4">
-                            <div class="mapa-grid min-w-[800px]">
-                                <!-- Header -->
-                                <div class="mapa-cell mapa-header imovel-col justify-center border-b-2 border-slate-200">Acomodação</div>
+                        <!-- ADICIONADO OVERFLOW-X-AUTO E MIN-W PARA ROLAGEM FUNCIONAR -->
+                        <div class="overflow-x-auto overflow-y-hidden flex-1 custom-scroll pb-4 border border-slate-100 rounded-xl bg-white shadow-sm">
+                            <div class="mapa-grid min-w-[1000px]">
+                                <!-- Header Grid -->
+                                <div class="mapa-cell mapa-header imovel-col border-b-2 border-slate-200 uppercase tracking-wider text-[10px]">Acomodação</div>
                                 <div class="mapa-cell mapa-header">1</div><div class="mapa-cell mapa-header">2</div><div class="mapa-cell mapa-header">3</div>
                                 <div class="mapa-cell mapa-header">4</div><div class="mapa-cell mapa-header">5</div><div class="mapa-cell mapa-header">6</div>
                                 <div class="mapa-cell mapa-header">7</div><div class="mapa-cell mapa-header">8</div><div class="mapa-cell mapa-header">9</div>
@@ -264,19 +349,8 @@
                                 
                                 <!-- Linha 1 -->
                                 <div class="mapa-cell imovel-col">
-                                    <span class="text-xs text-[#0f52ba]">Flat Premium Vista Mar (Apto 402)</span>
-                                    <span class="text-[9px] text-slate-400 font-normal">Florianópolis - SC</span>
-                                </div>
-                                <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
-                                <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
-                                <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
-                                <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
-                                <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
-
-                                <!-- Linha 2 -->
-                                <div class="mapa-cell imovel-col">
-                                    <span class="text-xs text-[#0f52ba]">Lacqua diRoma (Apto 101)</span>
-                                    <span class="text-[9px] text-slate-400 font-normal">Caldas Novas - GO</span>
+                                    <span class="text-[13px] font-bold text-[#0f52ba]">Flat Premium Vista Mar</span>
+                                    <span class="text-[10px] text-slate-400 font-semibold">Florianópolis - SC</span>
                                 </div>
                                 <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
                                 <div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div><div class="mapa-cell text-slate-300">1</div>
@@ -287,145 +361,144 @@
                         </div>
                     </div>
 
-                    <!-- 4. GAVETA RESERVAS (Identico ao Print) -->
+                    <!-- 4. GAVETA: RESERVAS -->
                     <div id="admin-content-reservas" class="hidden-view p-8 h-full flex flex-col">
                         <div class="flex justify-between items-start mb-6">
                             <div>
-                                <h2 class="text-xl font-bold text-[#1e293b]">Central de Reservas</h2>
-                                <p class="text-xs text-slate-500 mt-1">Gerencie todas as locações, usos próprios e manutenções.</p>
+                                <h2 class="text-2xl font-black text-[#1e293b]">Central de Reservas</h2>
+                                <p class="text-sm text-slate-500 mt-1 font-semibold">Gerencie todas as locações, usos próprios e manutenções.</p>
                             </div>
-                            <button class="bg-[#ea580c] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-orange-700 transition flex items-center"><i class="fas fa-plus mr-2"></i> Nova Reserva</button>
+                            <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                            <button onclick="abrirModal('reserva')" class="bg-[#ea580c] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-orange-600 transition flex items-center gap-2"><i class="fas fa-plus"></i> Nova Reserva</button>
                         </div>
                         
-                        <div class="flex justify-between items-end mb-4 border-b border-slate-100 pb-4">
+                        <div class="flex justify-between items-end mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">PERÍODO</label>
-                                <div class="flex gap-2">
-                                    <select class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium outline-none"><option>Todas as Datas</option></select>
-                                    <button class="bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center"><i class="fas fa-filter mr-2"></i> Filtrar</button>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">PERÍODO</label>
+                                <div class="flex gap-3">
+                                    <select class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none bg-white min-w-[160px]"><option>Todas as Datas</option></select>
+                                    <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                                    <button onclick="mostrarAviso('Filtrando dados...')" class="bg-[#0f172a] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-800 transition flex items-center gap-2"><i class="fas fa-filter"></i> Filtrar</button>
                                 </div>
                             </div>
-                            <button class="bg-[#16a34a] text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition flex items-center"><i class="fas fa-file-excel mr-2"></i> Baixar Excel</button>
+                            <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                            <button onclick="mostrarAviso('Baixando planilha Excel...')" class="bg-[#16a34a] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-green-700 transition flex items-center gap-2"><i class="fas fa-file-excel"></i> Baixar Excel</button>
                         </div>
 
-                        <div class="overflow-auto flex-1 custom-scroll">
+                        <div class="overflow-auto flex-1 custom-scroll bg-white rounded-2xl border border-slate-100 shadow-sm">
                             <table class="w-full text-left border-collapse min-w-[900px]">
                                 <thead>
-                                    <tr class="bg-slate-100 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
-                                        <th class="p-3 rounded-tl-lg">DATA</th>
-                                        <th class="p-3">RESERVA Nº</th>
-                                        <th class="p-3">STATUS</th>
-                                        <th class="p-3">TITULAR / FINALIDADE</th>
-                                        <th class="p-3">ACOMODAÇÃO</th>
-                                        <th class="p-3">DATAS</th>
-                                        <th class="p-3">VALOR TOTAL</th>
-                                        <th class="p-3 rounded-tr-lg">AÇÕES</th>
+                                    <tr class="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold tracking-wider border-b border-slate-200">
+                                        <th class="p-4 pl-6">DATA</th><th class="p-4">RESERVA Nº</th><th class="p-4">STATUS</th><th class="p-4">TITULAR / FINALIDADE</th><th class="p-4">ACOMODAÇÃO</th><th class="p-4">DATAS</th><th class="p-4">VALOR TOTAL</th><th class="p-4 pr-6 text-right">AÇÕES</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-sm font-medium text-slate-700">
-                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                        <td class="p-4">22/06/2026</td><td class="p-4 text-slate-400">102</td>
-                                        <td class="p-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">PAGO</span></td>
-                                        <td class="p-4">Paulo</td><td class="p-4 text-[#0f52ba]">Lacqua diRoma (101)</td>
+                                <tbody class="text-sm font-semibold text-slate-700">
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                                        <td class="p-4 pl-6 font-bold text-slate-600">22/06/2026</td><td class="p-4 text-slate-400">102</td>
+                                        <td class="p-4"><span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-md text-[10px] font-black tracking-wide">PAGO</span></td>
+                                        <td class="p-4 font-bold text-slate-800">Paulo</td><td class="p-4 text-[#0f52ba] font-bold">Lacqua diRoma (101)</td>
                                         <td class="p-4 text-xs">03/07/2026 a 05/07/2026</td>
-                                        <td class="p-4"><div class="font-black text-slate-800">R$ 300,00</div><div class="text-[10px] text-green-600">Quitado</div></td>
-                                        <td class="p-4 flex gap-1"><button class="bg-orange-500 text-white w-7 h-7 rounded flex items-center justify-center"><i class="fas fa-bars"></i></button><button class="bg-slate-100 text-slate-600 border border-slate-300 w-7 h-7 rounded flex items-center justify-center"><i class="fas fa-edit"></i></button></td>
-                                    </tr>
-                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                        <td class="p-4">21/06/2026</td><td class="p-4 text-slate-400">101</td>
-                                        <td class="p-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">PAGO</span></td>
-                                        <td class="p-4">Adriana Diniz</td><td class="p-4 text-[#0f52ba]">Lacqua diRoma (101)</td>
-                                        <td class="p-4 text-xs">26/06/2026 a 30/06/2026</td>
-                                        <td class="p-4"><div class="font-black text-slate-800">R$ 400,00</div><div class="text-[10px] text-green-600">Quitado</div></td>
-                                        <td class="p-4 flex gap-1"><button class="bg-orange-500 text-white w-7 h-7 rounded flex items-center justify-center"><i class="fas fa-bars"></i></button><button class="bg-slate-100 text-slate-600 border border-slate-300 w-7 h-7 rounded flex items-center justify-center"><i class="fas fa-edit"></i></button></td>
+                                        <td class="p-4"><div class="font-black text-slate-800 text-base">R$ 300,00</div><div class="text-[10px] font-bold text-green-600 mt-0.5">Quitado</div></td>
+                                        <td class="p-4 pr-6 flex gap-1.5 justify-end">
+                                            <!-- BOTÕES DE AÇÃO COM ONCLICK -->
+                                            <button onclick="mostrarAviso('Abrindo menu de opções...')" class="bg-[#ea580c] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-orange-600 shadow-sm"><i class="fas fa-bars"></i></button>
+                                            <button onclick="abrirModal('reserva')" class="bg-white text-slate-500 border border-slate-200 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50 shadow-sm"><i class="fas fa-edit"></i></button>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- 5. GAVETA ORÇAMENTOS (Identico ao Print) -->
+                    <!-- 5. GAVETA: ORÇAMENTOS -->
                     <div id="admin-content-orcamentos" class="hidden-view p-8 h-full flex flex-col">
-                        <h2 class="text-xl font-bold text-[#1e293b] mb-6">CRM de Orçamentos</h2>
+                        <h2 class="text-2xl font-black text-[#1e293b] mb-8">CRM de Orçamentos</h2>
                         
-                        <div class="flex border-b border-slate-200 mb-6 gap-6 text-sm font-bold">
-                            <div class="pb-2 border-b-2 border-orange-500 text-orange-600 cursor-pointer"><i class="fas fa-search mr-2"></i> Novo Orçamento</div>
-                            <div class="pb-2 text-slate-400 cursor-pointer hover:text-slate-600"><i class="fas fa-history mr-2"></i> Histórico (Follow-up)</div>
+                        <div class="flex border-b border-slate-200 mb-8 gap-8 text-sm font-bold">
+                            <div class="pb-3 border-b-2 border-[#ea580c] text-[#ea580c] cursor-pointer flex items-center gap-2"><i class="fas fa-search"></i> Novo Orçamento</div>
+                            <div class="pb-3 text-slate-400 cursor-pointer hover:text-slate-600 flex items-center gap-2"><i class="fas fa-history"></i> Histórico (Follow-up)</div>
                         </div>
 
-                        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-6">
-                            <div class="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 mb-4"><i class="fas fa-filter text-orange-500"></i> BUSCAR DISPONIBILIDADE</div>
-                            <div class="grid grid-cols-4 gap-4 items-end">
-                                <div><label class="block text-[11px] font-medium text-slate-600 mb-1">Início</label><div class="relative"><input type="text" placeholder="dd/mm/aaaa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><i class="fas fa-calendar absolute right-3 top-2.5 text-slate-400"></i></div></div>
-                                <div><label class="block text-[11px] font-medium text-slate-600 mb-1">Fim</label><div class="relative"><input type="text" placeholder="dd/mm/aaaa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><i class="fas fa-calendar absolute right-3 top-2.5 text-slate-400"></i></div></div>
-                                <div><label class="block text-[11px] font-medium text-slate-600 mb-1">Hóspedes</label><select class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white"><option>2</option></select></div>
-                                <button class="bg-[#1e293b] text-white rounded-lg font-bold text-sm h-[42px] hover:bg-slate-800 transition"><i class="fas fa-search mr-2"></i>Pesquisar</button>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6">
+                            <div class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-5"><i class="fas fa-filter text-[#ea580c]"></i> BUSCAR DISPONIBILIDADE</div>
+                            <div class="grid grid-cols-4 gap-5 items-end">
+                                <div><label class="block text-xs font-bold text-slate-600 mb-1.5">Início</label><div class="relative"><input type="date" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#ea580c]"></div></div>
+                                <div><label class="block text-xs font-bold text-slate-600 mb-1.5">Fim</label><div class="relative"><input type="date" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#ea580c]"></div></div>
+                                <div><label class="block text-xs font-bold text-slate-600 mb-1.5">Hóspedes</label><select class="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm bg-white font-bold text-slate-700 outline-none"><option>2</option></select></div>
+                                <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                                <button onclick="mostrarAviso('Pesquisando disponibilidade...')" class="bg-[#0f172a] text-white rounded-xl font-bold text-sm h-[46px] hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-md"><i class="fas fa-search"></i> Pesquisar</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 6. GAVETA DESPESAS (Nova! Identico ao Print) -->
+                    <!-- 6. GAVETA: DESPESAS -->
                     <div id="admin-content-despesas" class="hidden-view p-8 h-full flex flex-col">
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="flex items-center gap-4">
+                        <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+                            <div class="flex items-center gap-6">
                                 <div>
-                                    <label class="block text-[10px] font-medium text-slate-500 mb-1">Imóvel</label>
-                                    <select class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium outline-none min-w-[200px]"><option>Lacqua diRoma</option></select>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Imóvel</label>
+                                    <select class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none bg-white min-w-[220px] shadow-sm"><option>Lacqua diRoma</option></select>
                                 </div>
-                                <div class="mt-4 flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm h-[38px]">
-                                    <button class="px-3 hover:bg-slate-50 border-r border-slate-200 text-slate-600"><i class="fas fa-chevron-left text-xs"></i></button>
-                                    <div class="px-4 text-sm font-bold text-[#1e293b] flex items-center justify-center min-w-[120px]">JUNHO 2026</div>
-                                    <button class="px-3 hover:bg-slate-50 border-l border-slate-200 text-slate-600"><i class="fas fa-chevron-right text-xs"></i></button>
+                                <div class="mt-5 flex border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm p-1">
+                                    <button class="px-4 py-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><i class="fas fa-chevron-left text-xs"></i></button>
+                                    <div class="px-4 py-1.5 text-sm font-black text-[#1e293b] flex items-center justify-center min-w-[120px]">JUNHO 2026</div>
+                                    <button class="px-4 py-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><i class="fas fa-chevron-right text-xs"></i></button>
                                 </div>
                             </div>
-                            <button class="bg-[#ef4444] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow hover:bg-red-600 mt-4"><i class="fas fa-plus mr-2"></i> Nova Despesa</button>
+                            <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                            <button onclick="mostrarAviso('Abertura de Modal de Despesa')" class="bg-[#ef4444] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-red-600 mt-5 transition-colors flex items-center gap-2"><i class="fas fa-plus"></i> Nova Despesa</button>
                         </div>
 
-                        <div class="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                        <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
-                                        <th class="p-4">DATA</th><th class="p-4">DESCRIÇÃO</th><th class="p-4">VALOR (R$)</th><th class="p-4">AÇÕES</th>
+                                    <tr class="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold tracking-wider border-b border-slate-200">
+                                        <th class="p-5 pl-6">DATA</th><th class="p-5">DESCRIÇÃO</th><th class="p-5">VALOR (R$)</th><th class="p-5 pr-6 text-right">AÇÕES</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-sm font-medium text-[#1e293b]">
-                                    <tr class="border-b border-slate-50">
-                                        <td class="p-4 text-slate-500">21/06/2026</td><td class="p-4">Faxina</td><td class="p-4 text-red-600">R$ 100,00</td>
-                                        <td class="p-4 flex gap-2"><button class="border border-slate-200 text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50"><i class="fas fa-edit"></i></button><button class="border border-slate-200 text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50"><i class="fas fa-trash"></i></button></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="p-4 text-slate-500">21/06/2026</td><td class="p-4">Manutenção</td><td class="p-4 text-red-600">R$ 20,00</td>
-                                        <td class="p-4 flex gap-2"><button class="border border-slate-200 text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50"><i class="fas fa-edit"></i></button><button class="border border-slate-200 text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50"><i class="fas fa-trash"></i></button></td>
+                                <tbody class="text-sm font-bold text-[#1e293b]">
+                                    <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                        <td class="p-5 pl-6 text-slate-500">21/06/2026</td><td class="p-5">Faxina</td><td class="p-5 text-red-600">R$ 100,00</td>
+                                        <!-- BOTÕES COM ONCLICK -->
+                                        <td class="p-5 pr-6 flex gap-2 justify-end">
+                                            <button onclick="mostrarAviso('Editar despesa')" class="border border-slate-200 text-slate-400 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors"><i class="fas fa-edit"></i></button>
+                                            <button onclick="mostrarAviso('Excluir despesa')" class="border border-slate-200 text-slate-400 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors"><i class="fas fa-trash"></i></button>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- 7. GAVETA DRE (Nova! Identico ao Print) -->
+                    <!-- 7. GAVETA: DRE -->
                     <div id="admin-content-dre" class="hidden-view p-8 h-full flex flex-col overflow-y-auto custom-scroll">
-                        <div class="flex items-end gap-4 mb-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex items-end gap-5 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
                             <div class="flex-1">
-                                <label class="block text-[10px] font-medium text-slate-500 mb-1">Selecione o Imóvel</label>
-                                <select class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium outline-none"><option>Lacqua diRoma</option></select>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Selecione o Imóvel</label>
+                                <select class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none bg-white"><option>Lacqua diRoma</option></select>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-medium text-slate-500 mb-1">Mês/Ano</label>
-                                <div class="relative"><input type="text" value="junho de 2026" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-40"><i class="fas fa-calendar absolute right-3 top-2.5 text-slate-400"></i></div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Mês/Ano</label>
+                                <div class="relative"><input type="month" value="2026-06" class="border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none w-48 bg-white"></div>
                             </div>
-                            <button class="bg-[#1e293b] text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow hover:bg-slate-800"><i class="fas fa-search mr-2"></i> Gerar</button>
+                            <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                            <button onclick="mostrarAviso('Gerando DRE...')" class="bg-[#0f172a] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-slate-800 transition-colors flex items-center gap-2 h-[46px]"><i class="fas fa-search"></i> Gerar</button>
                         </div>
 
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
-                            <div class="flex justify-between items-start mb-6">
-                                <div><h3 class="text-xl font-bold text-[#0f52ba] mb-1">Lacqua diRoma</h3><p class="text-xs text-slate-500">Proprietário: Paulo teste</p></div>
-                                <div class="flex gap-2 items-center"><span class="bg-orange-100 text-orange-700 px-3 py-1 rounded text-xs font-bold">2026-06</span><button class="bg-[#16a34a] text-white px-3 py-1.5 rounded text-sm font-bold"><i class="fas fa-file-excel mr-1"></i> Baixar Excel</button></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+                            <div class="flex justify-between items-start mb-8">
+                                <div><h3 class="text-2xl font-black text-[#0f52ba] mb-1">Lacqua diRoma</h3><p class="text-sm font-semibold text-slate-500">Proprietário: Paulo teste</p></div>
+                                <div class="flex gap-3 items-center">
+                                    <span class="bg-orange-100 text-orange-700 px-4 py-1.5 rounded-lg text-sm font-black tracking-wider">2026-06</span>
+                                    <!-- BOTÃO COM ONCLICK ADICIONADO -->
+                                    <button onclick="mostrarAviso('Baixando relatório DRE em Excel...')" class="bg-[#16a34a] text-white px-5 py-2 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition-colors flex items-center gap-2"><i class="fas fa-file-excel"></i> Baixar Excel</button>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-4 gap-4">
-                                <div class="bg-white border border-slate-200 border-l-4 border-l-green-500 rounded-lg p-4 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold mb-1">RECEITAS</div><div class="text-2xl font-black text-green-500">R$ 400,00</div></div>
-                                <div class="bg-white border border-slate-200 border-l-4 border-l-orange-400 rounded-lg p-4 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold mb-1">COMISSÃO (20%)</div><div class="text-2xl font-black text-orange-400">R$ 80,00</div></div>
-                                <div class="bg-white border border-slate-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold mb-1">DESPESAS</div><div class="text-2xl font-black text-red-500">R$ 120,00</div></div>
-                                <div class="bg-[#1e293b] border-l-4 border-l-blue-400 rounded-lg p-4 shadow-sm"><div class="text-[10px] uppercase text-slate-300 font-bold mb-1">LÍQUIDO PROP.</div><div class="text-2xl font-black text-white">R$ 200,00</div></div>
+                            <div class="grid grid-cols-4 gap-6">
+                                <div class="bg-white border border-slate-200 border-l-4 border-l-green-500 rounded-2xl p-5 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-2">RECEITAS</div><div class="text-3xl font-black text-green-500">R$ 400,00</div></div>
+                                <div class="bg-white border border-slate-200 border-l-4 border-l-orange-400 rounded-2xl p-5 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-2">COMISSÃO (20%)</div><div class="text-3xl font-black text-orange-400">R$ 80,00</div></div>
+                                <div class="bg-white border border-slate-200 border-l-4 border-l-red-500 rounded-2xl p-5 shadow-sm"><div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-2">DESPESAS</div><div class="text-3xl font-black text-red-500">R$ 120,00</div></div>
+                                <div class="bg-[#0f172a] rounded-2xl p-5 shadow-lg relative overflow-hidden"><div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div><div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-2 pl-2">LÍQUIDO PROP.</div><div class="text-3xl font-black text-white pl-2">R$ 200,00</div></div>
                             </div>
                         </div>
                     </div>
@@ -436,88 +509,84 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO FIREBASE MANTIDA
-        const firebaseConfig = { apiKey: "SUA_API_KEY_AQUI", authDomain: "seu-projeto.firebaseapp.com", projectId: "seu-projeto", storageBucket: "seu-projeto.appspot.com" };
-        try { if(firebaseConfig.apiKey !== "SUA_API_KEY_AQUI") firebase.initializeApp(firebaseConfig); } catch(e) {}
-
-        let currentUser = null;
-        let idAgenciaPublica = null;
-
+        // Inicia o sistema
         window.onload = function() {
-            verificarLinkPublico();
-            if(!idAgenciaPublica) {
-                // Simula login automático para teste de layout
-                fazerLogin(); 
-            }
+            console.log("Sistema Carregado. Pronto para testes visuais.");
+            alternarVisao('admin'); // Abre direto no admin para testarmos
+            mudarAbaInternaAdmin('imoveis');
         };
 
-        function verificarLinkPublico() {
-            const urlParams = new URLSearchParams(window.location.search);
-            idAgenciaPublica = urlParams.get('agencia');
-            if(idAgenciaPublica) {
-                document.getElementById('login-screen').classList.add('hidden-view');
-                document.getElementById('app-container').classList.remove('hidden-view');
-                if(document.getElementById('btn-nav-admin')) document.getElementById('btn-nav-admin').style.display = 'none';
-                if(document.getElementById('btn-logout')) document.getElementById('btn-logout').style.display = 'none';
-                alternarView('vitrine');
-            }
-        }
-
-        function fazerLogin() {
-            document.getElementById('login-screen').classList.add('hidden-view');
-            document.getElementById('app-container').classList.remove('hidden-view');
-            alternarView('admin');
-            mudarAbaInternaAdmin('imoveis'); // Inicia na aba Meus Imóveis como no print
-        }
-
-        function fazerLogout() {
-            document.getElementById('login-screen').classList.remove('hidden-view');
-            document.getElementById('app-container').classList.add('hidden-view');
-        }
-
-        function toggleSenha() {
-            const input = document.getElementById('login-senha');
-            const icone = document.getElementById('icone-senha');
-            if (input.type === 'password') { input.type = 'text'; icone.classList.replace('fa-eye', 'fa-eye-slash'); } 
-            else { input.type = 'password'; icone.classList.replace('fa-eye-slash', 'fa-eye'); }
-        }
-
-        function alternarView(view) {
+        // Funções de Navegação Principal
+        function alternarVisao(visao) {
             document.getElementById('view-vitrine').classList.add('hidden-view');
             document.getElementById('view-admin').classList.add('hidden-view');
-            document.getElementById('btn-nav-vitrine').className = 'px-4 py-1.5 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100 transition-all border border-slate-200';
-            if(document.getElementById('btn-nav-admin')) document.getElementById('btn-nav-admin').className = 'px-4 py-1.5 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100 transition-all border border-slate-200';
+            
+            document.getElementById('btn-nav-vitrine').className = 'px-5 py-2 text-sm font-bold rounded-full text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2';
+            document.getElementById('btn-nav-admin').className = 'px-5 py-2 text-sm font-bold rounded-full text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2';
 
-            if(view === 'vitrine') {
+            if(visao === 'vitrine') {
                 document.getElementById('view-vitrine').classList.remove('hidden-view');
-                document.getElementById('btn-nav-vitrine').className = 'px-4 py-1.5 text-sm font-semibold rounded-full bg-white text-orange-600 border border-orange-200 shadow-sm transition-all';
+                document.getElementById('btn-nav-vitrine').className = 'px-5 py-2 text-sm font-bold rounded-full bg-white text-[#ea580c] shadow-sm border border-slate-200 transition-all flex items-center gap-2';
             } else {
                 document.getElementById('view-admin').classList.remove('hidden-view');
-                if(document.getElementById('btn-nav-admin')) document.getElementById('btn-nav-admin').className = 'px-4 py-1.5 text-sm font-semibold rounded-full bg-white text-orange-600 border border-orange-200 shadow-sm transition-all';
+                document.getElementById('btn-nav-admin').className = 'px-5 py-2 text-sm font-bold rounded-full bg-white text-[#ea580c] shadow-sm border border-slate-200 transition-all flex items-center gap-2';
             }
         }
 
+        // Função de Menus (Gavetas)
         function mudarAbaInternaAdmin(abaId) {
             const gavetas = ['empresa', 'imoveis', 'mapa', 'reservas', 'orcamentos', 'despesas', 'dre'];
+            
+            // Esconde todas e reseta os menus
             gavetas.forEach(g => {
                 document.getElementById(`admin-content-${g}`).classList.add('hidden-view');
                 let btn = document.getElementById(`btn-aba-${g}`);
                 if(btn) {
-                    btn.className = 'w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 transition-colors';
-                    btn.querySelector('i').className = btn.querySelector('i').className.replace('text-orange-500', 'text-slate-400');
+                    btn.className = 'w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-inactive';
+                    btn.querySelector('i').classList.remove('text-[#ea580c]');
                 }
             });
 
+            // Mostra a selecionada e pinta o menu
             document.getElementById(`admin-content-${abaId}`).classList.remove('hidden-view');
             const btnClicado = document.getElementById(`btn-aba-${abaId}`);
             if(btnClicado) {
-                btnClicado.className = 'w-full flex items-center px-4 py-3 text-sm font-bold rounded-lg bg-orange-50 text-orange-600 border-l-4 border-orange-500 transition-all';
-                btnClicado.querySelector('i').className = btnClicado.querySelector('i').className.replace('text-slate-400', 'text-orange-500');
+                btnClicado.className = 'w-full flex items-center px-4 py-3.5 text-sm rounded-xl transition-all menu-item-active';
+                btnClicado.querySelector('i').classList.add('text-[#ea580c]');
             }
         }
-        
-        function copiarLinkVitrine() {
-            alert("Link copiado: https://laranja-stays.vercel.app/?agencia=SEU_ID");
+
+        // SISTEMA DE MODAIS (Telas Flutuantes)
+        function abrirModal(tipo) {
+            document.getElementById(`modal-${tipo}`).classList.remove('hidden-view');
+        }
+
+        function fecharModal(tipo) {
+            document.getElementById(`modal-${tipo}`).classList.add('hidden-view');
+        }
+
+        function salvarModal(tipo) {
+            fecharModal(tipo);
+            mostrarAviso(`Salvo com sucesso!`);
+        }
+
+        // SISTEMA DE NOTIFICAÇÕES (Substituindo o alert())
+        function mostrarAviso(mensagem) {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = 'bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg font-bold text-sm flex items-center gap-3 fade-in';
+            toast.innerHTML = `<i class="fas fa-check-circle text-lg"></i> ${mensagem}`;
+            
+            container.appendChild(toast);
+            
+            // Some após 3 segundos
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 </body>
