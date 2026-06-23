@@ -479,7 +479,7 @@
                         }
                     } catch(e) {
                         console.error(e);
-                        mostrarAlerta("O Firebase bloqueou a leitura. Verifique as Regras no painel.");
+                        mostrarAlerta("Não foi possível carregar a vitrine. Verifique o link.");
                         hide('notificacao');
                     }
                 } else {
@@ -489,6 +489,10 @@
                             currentUserUid = user.uid; 
                             hide('tela-login');
                             show('app-content');
+                            // Garante que o botão Admin volte caso alguém tenha acessado um link público antes na mesma sessão
+                            if (el('btn-admin')) show('btn-admin');
+                            if (el('btn-sair-sistema')) show('btn-sair-sistema');
+                            if (el('nav-divisor')) show('nav-divisor');
                             await carregarDoFirebase();
                         } else {
                             currentUserUid = null; 
@@ -630,35 +634,46 @@
             
             // Permite logar apertando ENTER na senha
             if(el('login-senha')) el('login-senha').addEventListener('keypress', function(e){ if(e.key === 'Enter') fazerLogin(); });
+
+            // INICIALIZA A ABA ADMIN CORRETA SE ELA ESTIVER VISÍVEL
+            mudarAbaInternaAdmin('empresa');
         }
 
         function mudarAba(aba) {
             if (aba === 'vitrine') { 
                 show('tela-vitrine'); hide('tela-admin'); 
                 el('btn-vitrine').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                if(el('btn-admin')) el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
             } else { 
                 hide('tela-vitrine'); show('tela-admin'); 
                 el('btn-vitrine').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                renderizarMapaDisponibilidade(); renderizarListaReservasAdmin(); 
+                if(el('btn-admin')) el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                
+                // Força a renderização inicial do Admin caso seja a primeira vez que entra
+                renderizarAdmin();
+                renderizarMapaDisponibilidade(); 
+                renderizarListaReservasAdmin(); 
             }
         }
 
         function mudarAbaInternaAdmin(aba) {
             const abas = ['empresa', 'imoveis', 'mapa', 'reservas', 'orcamentos', 'despesas', 'resultados'];
             abas.forEach(a => {
-                let d = el(`admin-content-${a}`); let b = el(`btn-admin-${a}`);
+                let d = el(`admin-content-${a}`); 
+                let b = el(`btn-admin-${a}`);
+                
                 if (a === aba) { 
-                    d?.classList.remove('hidden-view'); 
+                    if(d) d.classList.remove('hidden-view'); 
                     if(b) b.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all bg-orange-50 text-orange-600"; 
+                    
+                    if(a==='imoveis') renderizarAdmin();
                     if(a==='mapa') renderizarMapaDisponibilidade(); 
                     if(a==='reservas') renderizarListaReservasAdmin(); 
                     if(a==='orcamentos') renderListaOrc(); 
                     if(a==='resultados') povoarFiltrosResultados(); 
                     if(a==='despesas'){ povoarFiltrosDespesas(); if(el('label-mes-despesa')) el('label-mes-despesa').innerText=`${mesesCompletos[despesaMes-1]} ${despesaAno}`; }
                 } else { 
-                    d?.classList.add('hidden-view'); 
+                    if(d) d.classList.add('hidden-view'); 
                     if(b) b.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50"; 
                 }
             });
