@@ -160,10 +160,11 @@
                 <div class="p-5 overflow-y-auto custom-scroll space-y-4">
                     <input type="hidden" id="reserva-id">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div class="md:col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">Imóvel</label><select id="reserva-imovel-select" onchange="checarDisponibilidadeAoDigitar()" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium bg-slate-50"></select></div>
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Check-in</label><input type="date" id="reserva-checkin" onchange="atualizarCheckoutAutomatico('reserva-checkin', 'reserva-checkout')" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"></div>
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Check-out</label><input type="date" id="reserva-checkout" onchange="checarDisponibilidadeAoDigitar()" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3 items-end">
+                            <div class="col-span-12 md:col-span-12"><label class="block text-xs font-medium text-slate-600 mb-1">Imóvel</label><select id="reserva-imovel-select" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium bg-slate-50"></select></div>
+                            <div class="col-span-12 md:col-span-4"><label class="block text-xs font-medium text-slate-600 mb-1">Check-in</label><input type="date" id="reserva-checkin" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"></div>
+                            <div class="col-span-12 md:col-span-4"><label class="block text-xs font-medium text-slate-600 mb-1">Check-out</label><input type="date" id="reserva-checkout" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium"></div>
+                            <div class="col-span-12 md:col-span-4"><button onclick="checarDisponibilidadeAoDigitar()" type="button" class="w-full bg-slate-800 text-white hover:bg-slate-900 rounded-xl font-bold text-sm h-[42px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"><i class="fas fa-search"></i> Verificar</button></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end p-3 bg-slate-50 rounded-lg border border-slate-200">
                             <div><label class="block text-xs font-medium text-slate-600 mb-1">Situação</label><select id="reserva-status" onchange="calcularValorReservaAdmin(); toggleCamposReserva()" class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm font-medium"><option value="pendente">Pendente (Receber)</option><option value="pago" id="opt-status-pago" class="hidden-view">Pago (Quitado)</option><option value="proprietario">Uso Proprietário</option><option value="bloqueio">Manutenção</option><option value="devolucao" id="opt-status-devolucao" class="hidden-view">Reembolso</option><option value="cancelada" id="opt-status-cancelada" class="hidden-view">Cancelada</option></select></div>
@@ -414,7 +415,7 @@
                 const dataIn = new Date(valIn + 'T00:00:00');
                 dataIn.setDate(dataIn.getDate() + 1);
                 document.getElementById(idOut).value = dataIn.toISOString().split('T')[0];
-                if(idIn === 'reserva-checkin') checarDisponibilidadeAoDigitar();
+                // Removida a chamada automática: if(idIn === 'reserva-checkin') checarDisponibilidadeAoDigitar();
             }
         }
 
@@ -964,6 +965,12 @@
 
         function checarDisponibilidadeAoDigitar() { 
             const imId=val('reserva-imovel-select'); const ci=val('reserva-checkin'); const co=val('reserva-checkout'); const resId=val('reserva-id'); 
+            
+            if(!imId || !ci || !co) {
+                mostrarAlerta("Por favor, selecione o imóvel e as datas de check-in e check-out antes de verificar.");
+                return;
+            }
+            
             if(imId&&ci&&co){ 
                 if(verificarChoqueDatas(imId, ci, co, resId)) { 
                     mostrarAlerta("Data ocupada por outra reserva ou bloqueio."); 
@@ -991,11 +998,20 @@
                 }
                 
                 calcularValorReservaAdmin(); 
+                mostrarNotificacao("Disponível! Valor calculado.");
             } 
         }
         
         function abrirNovaReservaManualLista() { povoarSelectImoveis(); resetarModalReserva(); if(el('titulo-modal-reserva')) el('titulo-modal-reserva').innerText="Nova Reserva"; hide('btn-excluir-reserva'); hide('btn-cancelar-reserva'); show('modal-reserva-manual'); }
-        function abrirNovaReservaMapa(imId, dt) { abrirNovaReservaManualLista(); setVal('reserva-imovel-select', imId); setVal('reserva-checkin', dt); let do_ = new Date(dt+'T00:00:00'); do_.setDate(do_.getDate()+1); setVal('reserva-checkout', do_.toISOString().split('T')[0]); checarDisponibilidadeAoDigitar(); }
+        function abrirNovaReservaMapa(imId, dt) { 
+            abrirNovaReservaManualLista(); 
+            setVal('reserva-imovel-select', imId); 
+            setVal('reserva-checkin', dt); 
+            let do_ = new Date(dt+'T00:00:00'); 
+            do_.setDate(do_.getDate()+1); 
+            setVal('reserva-checkout', do_.toISOString().split('T')[0]); 
+            // Removida a verificação automática ao abrir pelo mapa: checarDisponibilidadeAoDigitar(); 
+        }
         
         function abrirEdicaoReservaMapa(imId, resId) {
             povoarSelectImoveis(); const im = imoveisDB.find(i=>i.id==imId); const res = im?.reservas.find(r=>r.id==resId); if(!res) return;
