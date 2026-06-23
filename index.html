@@ -84,7 +84,10 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Senha</label>
                     <div class="relative">
                         <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="password" id="login-senha" class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium transition-colors" placeholder="••••••••">
+                        <input type="password" id="login-senha" class="w-full pl-10 pr-10 py-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 outline-none text-sm font-medium transition-colors" placeholder="••••••••">
+                        <button type="button" onclick="toggleSenha()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors focus:outline-none" title="Mostrar/Esconder Senha">
+                            <i class="fas fa-eye" id="icone-senha"></i>
+                        </button>
                     </div>
                 </div>
                 
@@ -498,7 +501,32 @@
                 sv('login-senha', '');
                 el('btn-fazer-login').innerHTML = 'Entrar no Sistema';
                 el('btn-fazer-login').disabled = false;
+                
+                // Esconde a senha novamente caso o usuário tenha deixado visível
+                const inputSenha = el('login-senha');
+                const iconeSenha = el('icone-senha');
+                if(inputSenha && iconeSenha) {
+                    inputSenha.type = 'password';
+                    iconeSenha.classList.remove('fa-eye-slash');
+                    iconeSenha.classList.add('fa-eye');
+                }
             } catch(e) { console.error(e); }
+        }
+
+        function toggleSenha() {
+            const inputSenha = el('login-senha');
+            const iconeSenha = el('icone-senha');
+            if (!inputSenha || !iconeSenha) return;
+            
+            if (inputSenha.type === 'password') {
+                inputSenha.type = 'text';
+                iconeSenha.classList.remove('fa-eye');
+                iconeSenha.classList.add('fa-eye-slash'); // Ícone de olho com um traço (riscado)
+            } else {
+                inputSenha.type = 'password';
+                iconeSenha.classList.remove('fa-eye-slash');
+                iconeSenha.classList.add('fa-eye');
+            }
         }
 
         // ================= CARREGAMENTO DE DADOS =================
