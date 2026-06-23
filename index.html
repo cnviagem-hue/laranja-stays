@@ -543,33 +543,43 @@
             povoarSelectCategorias(); 
             carregarEmpresa(); 
             
+            // PADRONIZANDO O FLAT PICKR EM TODO O SISTEMA:
+            
+            // 1. Vitrine (Range de Datas)
             if(el('busca-datas-range')) {
                 window.flatpickrInstancia = flatpickr("#busca-datas-range", { mode: "range", dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" }); 
             }
 
-            // ATIVAR FLATPICKR PARA A NOVA RESERVA (ADMIN)
+            // 2. Nova Reserva (Com trava inteligente)
             if(el('reserva-checkin') && el('reserva-checkout')) {
                 fpReservaCheckin = flatpickr("#reserva-checkin", { 
                     dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt",
                     onChange: function(selectedDates, dateStr, instance) {
                         if(selectedDates[0]) {
-                            // Ao selecionar entrada, garante que saída é no mínimo o dia seguinte
                             let minOut = new Date(selectedDates[0]);
                             minOut.setDate(minOut.getDate() + 1);
                             fpReservaCheckout.set("minDate", minOut);
-                            
-                            // Se a data de saída atual for menor que a nova entrada, limpa
                             if(fpReservaCheckout.selectedDates[0] && fpReservaCheckout.selectedDates[0] <= selectedDates[0]) {
                                 fpReservaCheckout.clear();
                             }
                         }
                     }
                 });
-                
-                fpReservaCheckout = flatpickr("#reserva-checkout", { 
-                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" 
-                });
+                fpReservaCheckout = flatpickr("#reserva-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
             }
+            
+            // 3. Central de Reservas (Filtros)
+            if(el('filtro-reserva-inicio')) flatpickr("#filtro-reserva-inicio", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+            if(el('filtro-reserva-fim')) flatpickr("#filtro-reserva-fim", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+
+            // 4. Orçamentos
+            if(el('busca-orc-checkin')) flatpickr("#busca-orc-checkin", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+            if(el('busca-orc-checkout')) flatpickr("#busca-orc-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+
+            // 5. Data Nascimento (Titular) e Despesas
+            if(el('reserva-titular-nasc')) flatpickr("#reserva-titular-nasc", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+            if(el('despesa-data')) flatpickr("#despesa-data", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
+
 
             if(el('link-vitrine-display') && currentUserUid) {
                 el('link-vitrine-display').innerText = window.location.origin + window.location.pathname + '?agencia=' + currentUserUid;
