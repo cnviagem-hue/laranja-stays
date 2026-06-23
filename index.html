@@ -372,9 +372,8 @@
     <script>
         /* ========================================================================
         ATENÇÃO PAULO: CHAVES DO FIREBASE
-        O sistema vai pegar as chaves automaticamente aqui no nosso painel de testes.
-        Mas quando você for copiar este código para colocar no GITHUB / VERCEL, 
-        você PRECISA substituir os valores abaixo pelas suas chaves do Firebase.
+        Substitua os valores abaixo pelas SUAS chaves reais do Firebase.
+        Só assim o login vai reconhecer o seu e-mail cnviagem@gmail.com!
         ========================================================================
         */
         let firebaseConfig = {
@@ -385,12 +384,8 @@
             messagingSenderId: "COLE_SEU_MESSAGING_SENDER_ID_AQUI",
             appId: "COLE_SEU_APP_ID_AQUI"
         };
-        // Carrega automático apenas no nosso ambiente de testes
-        if (typeof __firebase_config !== 'undefined') {
-            try { firebaseConfig = JSON.parse(__firebase_config); } catch(e){}
-        }
 
-        // 1. Inicializar Firebase
+        // 1. Inicializar Firebase diretamente no SEU banco de dados oficial
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
