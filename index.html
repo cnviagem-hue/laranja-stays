@@ -438,6 +438,10 @@
         let despesaMes = new Date().getMonth() + 1; let despesaAno = new Date().getFullYear(); let reservasAtuaisExportacao = []; 
         const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+        // INSTANCIAS DO FLATPICKR (Admin)
+        let fpReservaCheckin = null;
+        let fpReservaCheckout = null;
+
         // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
         const agenciaId = urlParams.get('agencia');
@@ -541,6 +545,30 @@
             
             if(el('busca-datas-range')) {
                 window.flatpickrInstancia = flatpickr("#busca-datas-range", { mode: "range", dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" }); 
+            }
+
+            // ATIVAR FLATPICKR PARA A NOVA RESERVA (ADMIN)
+            if(el('reserva-checkin') && el('reserva-checkout')) {
+                fpReservaCheckin = flatpickr("#reserva-checkin", { 
+                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if(selectedDates[0]) {
+                            // Ao selecionar entrada, garante que saída é no mínimo o dia seguinte
+                            let minOut = new Date(selectedDates[0]);
+                            minOut.setDate(minOut.getDate() + 1);
+                            fpReservaCheckout.set("minDate", minOut);
+                            
+                            // Se a data de saída atual for menor que a nova entrada, limpa
+                            if(fpReservaCheckout.selectedDates[0] && fpReservaCheckout.selectedDates[0] <= selectedDates[0]) {
+                                fpReservaCheckout.clear();
+                            }
+                        }
+                    }
+                });
+                
+                fpReservaCheckout = flatpickr("#reserva-checkout", { 
+                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" 
+                });
             }
 
             if(el('link-vitrine-display') && currentUserUid) {
@@ -1006,17 +1034,35 @@
         function abrirNovaReservaMapa(imId, dt) { 
             abrirNovaReservaManualLista(); 
             setVal('reserva-imovel-select', imId); 
-            setVal('reserva-checkin', dt); 
-            let do_ = new Date(dt+'T00:00:00'); 
-            do_.setDate(do_.getDate()+1); 
-            setVal('reserva-checkout', do_.toISOString().split('T')[0]); 
-            // Removida a verificação automática ao abrir pelo mapa: checarDisponibilidadeAoDigitar(); 
+            
+            // Setar valores usando o Flatpickr
+            if(fpReservaCheckin) {
+                fpReservaCheckin.setDate(dt, true);
+                
+                let do_ = new Date(dt+'T00:00:00'); 
+                do_.setDate(do_.getDate()+1); 
+                let dtOut = do_.toISOString().split('T')[0];
+                
+                if(fpReservaCheckout) fpReservaCheckout.setDate(dtOut, true);
+            } else {
+                 setVal('reserva-checkin', dt);
+                 let do_ = new Date(dt+'T00:00:00'); 
+                 do_.setDate(do_.getDate()+1); 
+                 setVal('reserva-checkout', do_.toISOString().split('T')[0]);
+            }
         }
         
         function abrirEdicaoReservaMapa(imId, resId) {
             povoarSelectImoveis(); const im = imoveisDB.find(i=>i.id==imId); const res = im?.reservas.find(r=>r.id==resId); if(!res) return;
             if(el('titulo-modal-reserva')) el('titulo-modal-reserva').innerText="Editar Reserva"; 
-            setVal('reserva-id', res.id); setVal('reserva-imovel-select', imId); setVal('reserva-checkin', res.checkin); setVal('reserva-checkout', res.checkout);
+            setVal('reserva-id', res.id); setVal('reserva-imovel-select', imId); 
+            
+            if(fpReservaCheckin && fpReservaCheckout) {
+                fpReservaCheckin.setDate(res.checkin, true);
+                fpReservaCheckout.setDate(res.checkout, true);
+            } else {
+                 setVal('reserva-checkin', res.checkin); setVal('reserva-checkout', res.checkout);
+            }
             
             let pg = res.statusPagamento==='pago' ? (res.valorPago!==undefined?res.valorPago:res.valorTotal) : (res.valorPago||0); setVal('reserva-valor-pago', pg);
             
@@ -1034,7 +1080,10 @@
         function fecharModalReserva() { hide('modal-reserva-manual'); }
 
         function resetarModalReserva() {
-            setVal('reserva-imovel-select', ''); setVal('reserva-checkin', ''); setVal('reserva-checkout', ''); setVal('reserva-valor-pago', '0'); hide('aviso-diferenca');
+            setVal('reserva-imovel-select', ''); 
+            if(fpReservaCheckin) fpReservaCheckin.clear(); else setVal('reserva-checkin', ''); 
+            if(fpReservaCheckout) { fpReservaCheckout.clear(); fpReservaCheckout.set("minDate", null); } else setVal('reserva-checkout', ''); 
+            setVal('reserva-valor-pago', '0'); hide('aviso-diferenca');
             hide('opt-status-pago'); hide('opt-status-devolucao'); hide('opt-status-cancelada'); setVal('reserva-status', 'pendente');
             hide('bloco-multa-devolucao'); setVal('reserva-multa-perc', '0'); setVal('reserva-valor-multa-calculada', '0'); setVal('reserva-valor', '');
             setVal('reserva-titular-nome', ''); setVal('reserva-titular-cpf', ''); setVal('reserva-titular-nasc', ''); setVal('reserva-titular-zap', ''); setVal('reserva-titular-email', '');
