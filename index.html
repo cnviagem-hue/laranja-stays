@@ -964,7 +964,34 @@
 
         function checarDisponibilidadeAoDigitar() { 
             const imId=val('reserva-imovel-select'); const ci=val('reserva-checkin'); const co=val('reserva-checkout'); const resId=val('reserva-id'); 
-            if(imId&&ci&&co){ if(verificarChoqueDatas(imId, ci, co, resId)) { mostrarAlerta("Data ocupada por outra reserva ou bloqueio."); setVal('reserva-checkin',''); setVal('reserva-checkout',''); return; } calcularValorReservaAdmin(); } 
+            if(imId&&ci&&co){ 
+                if(verificarChoqueDatas(imId, ci, co, resId)) { 
+                    mostrarAlerta("Data ocupada por outra reserva ou bloqueio."); 
+                    setVal('reserva-checkin',''); setVal('reserva-checkout',''); return; 
+                } 
+                
+                const im = imoveisDB.find(i=>i.id==imId);
+                let inf = calcularPrecoDinamico(im, ci, co, resId);
+                
+                if (inf.bloqueioMinNoites) {
+                    let min = inf.minNoites;
+                    let dIn = new Date(ci+'T00:00:00');
+                    let dOutSugerido = new Date(dIn);
+                    dOutSugerido.setDate(dIn.getDate() + min);
+                    
+                    let dataInFormatada = dIn.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    let dataOutDigitada = new Date(co+'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    let dataOutCorreta = dOutSugerido.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    
+                    mostrarAlerta(`Atenção: A regra tarifária exige no mínimo <b>${min} noites</b> para este período.<br><br>Você pesquisou: ${dataInFormatada} a ${dataOutDigitada}<br><br>Sugestão de acordo com a regra:<br><b>${dataInFormatada} a ${dataOutCorreta}</b>`);
+                    
+                    setVal('reserva-checkout','');
+                    setVal('reserva-valor', 0);
+                    return;
+                }
+                
+                calcularValorReservaAdmin(); 
+            } 
         }
         
         function abrirNovaReservaManualLista() { povoarSelectImoveis(); resetarModalReserva(); if(el('titulo-modal-reserva')) el('titulo-modal-reserva').innerText="Nova Reserva"; hide('btn-excluir-reserva'); hide('btn-cancelar-reserva'); show('modal-reserva-manual'); }
