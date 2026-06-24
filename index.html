@@ -467,30 +467,24 @@
             hide('btn-admin'); 
             hide('btn-logout');
             
-            const iniciarBuscaPublica = (idDono) => {
-                if(idDono) return carregarDadosFirebase(idDono);
-                
-                // Busca de forma segura na coleção principal permitida, evitando bloqueios
-                db.collection("sistema_saas").where("empresaDB.slug", "==", linkSlug).limit(1).get()
-                .then(querySnapshot => {
-                    if (!querySnapshot.empty) {
-                        carregarDadosFirebase(querySnapshot.docs[0].id);
+            if(linkSlug) {
+                db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
+                    if (docSnap.exists) {
+                        let donoId = docSnap.data().uid;
+                        carregarDadosFirebase(donoId);
                     } else {
-                        show('tela-app'); // Força aparecer a tela para o alerta não ficar branco
-                        mostrarAlerta("Página não encontrada com este link.");
+                        hide('tela-loading');
+                        mostrarAlerta("Link de agência não encontrado.");
+                        show('tela-login');
                     }
                 }).catch(e => {
-                    console.error("Erro Firebase:", e);
-                    show('tela-app');
-                    mostrarAlerta("Acesso negado. O Firebase exige permissão pública para leitura.");
+                    console.error("Erro ao resolver link:", e);
+                    hide('tela-loading');
+                    mostrarAlerta("Erro de conexão.");
                 });
-            };
-
-            // Tenta o Login Anônimo por segurança. Se não estiver ativo no Firebase, tenta direto.
-            auth.signInAnonymously()
-                .then(() => iniciarBuscaPublica(agenciaId))
-                .catch(() => iniciarBuscaPublica(agenciaId));
-
+            } else {
+                carregarDadosFirebase(agenciaId);
+            }
         } else {
             auth.onAuthStateChanged((user) => {
                 if (user) {
@@ -501,6 +495,7 @@
                     carregarDadosFirebase(user.uid);
                 } else {
                     currentUserUid = null;
+                    hide('tela-loading');
                     show('tela-login');
                     hide('tela-app');
                 }
@@ -612,6 +607,7 @@
         }
 
         function inicializarApp() { 
+            hide('tela-loading');
             show('tela-app');
             
             inicializarCalendarios(); // CORREÇÃO DEFINITIVA: Inicia o flatpickr de forma blindada em todos os elementos
