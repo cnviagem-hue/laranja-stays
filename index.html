@@ -478,27 +478,20 @@
         let categoriasDB = ["Faxina", "Lavanderia", "Manutenção", "Luz", "Condomínio", "Outros"];
 
         let currentUserUid = null;
-        let isPublicVitrine = false;
-
-        // ESTADOS
-        let pacotesEmCriacao = []; let ajustesEmCriacao = []; let fotosEmCriacao = []; let abaAtivaCadastro = 'proprietario'; let imovelEditandoId = null; let imovelExcluirId = null;
-        let mapaMes = 6; let mapaAno = 2026; let acompanhantesTemp = []; let financeiroImovelSelectId = null; let financeiroMesStr = ""; let categoriaEditandoIndex = null;
-        let despesaMes = new Date().getMonth() + 1; let despesaAno = new Date().getFullYear(); let reservasAtuaisExportacao = []; 
-        const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-        // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
-        const urlParams = new URLSearchParams(window.location.search);
         
+        const urlParams = new URLSearchParams(window.location.search);
         const agenciaId = urlParams.get('agencia');
         const linkSlug = urlParams.get('link'); 
         
-        isPublicVitrine = !!(agenciaId || linkSlug);
+        let isPublicVitrine = !!(agenciaId || linkSlug);
         let appInicializado = false;
 
+        // TRAVA IMEDIATA DE VISUALIZAÇÃO: Se for link público, asfixia o painel de login e botões admin no momento zero
         if (isPublicVitrine) {
             hide('tela-login');
             hide('btn-admin'); 
             hide('btn-logout');
+            if(el('btn-vitrine')) el('btn-vitrine').classList.add('pointer-events-none');
             show('tela-loading');
         }
 
@@ -507,11 +500,10 @@
 
             try {
                 if (isPublicVitrine) {
-                    hide('tela-login'); // GARANTIA DE QUE A TELA DE LOGIN NÃO APAREÇA
                     
                     if (!user) {
                         await auth.signInAnonymously();
-                        return; // Aguarda o Firebase confirmar e recarregar
+                        return; // O Firebase fará nova chamada ao onAuthStateChanged após criar o anônimo
                     }
 
                     let donoId = agenciaId;
@@ -522,7 +514,7 @@
                             donoId = docSnap.data().uid;
                         } else {
                             hide('tela-loading');
-                            mostrarTelaErro(`O link "<b>${linkSlug}</b>" não foi encontrado ou ainda não foi salvo.<br><br><b>O que fazer:</b> Acesse o seu painel, vá em 'Minha Empresa', preencha os dados e clique no botão laranja 'Salvar' no final da página para ativá-lo.`);
+                            mostrarTelaErro(`O link "<b>${linkSlug}</b>" não foi encontrado ou ainda não foi salvo.<br><br><b>O que fazer:</b> Acesse o seu painel, vá em 'Minha Empresa', preencha os dados e clique no botão laranja 'Salvar'.`);
                             return;
                         }
                     }
@@ -533,16 +525,20 @@
                     }
 
                 } else {
-                    // Fluxo do Administrador
+                    // FLUXO DO ADMINISTRADOR (Sem '?link=')
                     if (user && !user.isAnonymous) {
                         currentUserUid = user.uid;
                         hide('tela-login');
                         show('tela-app');
                         show('btn-logout');
+                        show('btn-admin');
                         await carregarDadosFirebase(user.uid);
                         appInicializado = true;
                     } else {
-                        if (user && user.isAnonymous) await auth.signOut();
+                        if (user && user.isAnonymous) {
+                            await auth.signOut();
+                            return;
+                        }
                         currentUserUid = null;
                         hide('tela-loading'); 
                         show('tela-login');
@@ -550,10 +546,10 @@
                     }
                 }
             } catch (e) {
-                console.error("Erro crítico de inicialização:", e);
+                console.error("Erro na inicialização:", e);
                 hide('tela-loading');
                 if (isPublicVitrine) {
-                    mostrarTelaErro("Erro ao ler o banco de dados.<br>Certifique-se de ter publicado as <b>Regras do Firestore</b> corretamente lá no painel do Firebase.");
+                    mostrarTelaErro("Erro ao ler o banco de dados. Tente atualizar a página.");
                 } else {
                     show('tela-login');
                     mostrarAlerta("Erro de conexão.");
@@ -562,27 +558,22 @@
         });
 
         async function carregarDadosFirebase(uid) {
-            try {
-                const docSnap = await db.collection("sistema_saas").doc(uid).get();
-                if (docSnap.exists) {
-                    const data = docSnap.data();
-                    imoveisDB = data.imoveisDB || [];
-                    empresaDB = data.empresaDB || empresaDB;
-                    orcamentosDB = data.orcamentosDB || [];
-                    categoriasDB = data.categoriasDB || categoriasDB;
-                } else if (!isPublicVitrine) {
-                    imoveisDB = dbMockInicial;
-                    await sincronizarNuvem();
-                }
-                
-                // Trata garantias
-                imoveisDB.forEach(im => { if(!im.despesas) im.despesas=[]; if(!im.ajustesTarifa) im.ajustesTarifa=[]; if(!im.reservas) im.reservas=[]; if(im.proprietario && im.proprietario.comissao === undefined) im.proprietario.comissao=20; });
-                
-                inicializarApp();
-            } catch(e) {
-                // Ao invés de mostrar login, joga o erro para cima para ser tratado como erro grave.
-                throw e; 
+            const docSnap = await db.collection("sistema_saas").doc(uid).get();
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                imoveisDB = data.imoveisDB || [];
+                empresaDB = data.empresaDB || empresaDB;
+                orcamentosDB = data.orcamentosDB || [];
+                categoriasDB = data.categoriasDB || categoriasDB;
+            } else if (!isPublicVitrine) {
+                imoveisDB = dbMockInicial;
+                await sincronizarNuvem();
             }
+            
+            // Trata garantias
+            imoveisDB.forEach(im => { if(!im.despesas) im.despesas=[]; if(!im.ajustesTarifa) im.ajustesTarifa=[]; if(!im.reservas) im.reservas=[]; if(im.proprietario && im.proprietario.comissao === undefined) im.proprietario.comissao=20; });
+            
+            inicializarApp();
         }
 
         async function sincronizarNuvem() {
@@ -668,7 +659,7 @@
         }
 
         function inicializarApp() { 
-            hide('tela-loading'); // ESCONDE O SKELETON QUANDO TUDO ESTIVER PRONTO
+            hide('tela-loading'); 
             show('tela-app');
             
             inicializarCalendarios();
@@ -689,9 +680,14 @@
 
             if (isPublicVitrine) {
                 mudarAba('vitrine');
+                // TRAVA ABSOLUTA: Esconde os botões de admin de novo
+                hide('btn-admin');
+                hide('btn-logout');
             } else {
                 mudarAba('admin');
                 mudarAbaInternaAdmin('imoveis');
+                show('btn-admin');
+                show('btn-logout');
             }
         }
 
@@ -758,12 +754,12 @@
         function mudarAba(aba) {
             if (aba === 'vitrine') { 
                 show('tela-vitrine'); hide('tela-admin'); 
-                el('btn-vitrine').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                if(el('btn-vitrine')) el('btn-vitrine').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                if(el('btn-admin')) el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
             } else { 
                 hide('tela-vitrine'); show('tela-admin'); 
-                el('btn-vitrine').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                if(el('btn-vitrine')) el('btn-vitrine').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                if(el('btn-admin')) el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
                 renderizarMapaDisponibilidade(); renderizarListaReservasAdmin(); 
             }
         }
@@ -1645,7 +1641,11 @@
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#22c55e;color:white;text-align:center;font-weight:bold;">ENTRADAS</th></tr><tr style="background-color:#dcfce7;color:#166534;font-weight:bold;text-align:center;"><td>Hóspede</td><td>Período</td><td>Bruto</td><td>Retido</td></tr>${rH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#ef4444;color:white;text-align:center;font-weight:bold;">SAÍDAS</th></tr><tr style="background-color:#fee2e2;color:#b91c1c;font-weight:bold;text-align:center;"><td>Data</td><td colspan="2">Descrição</td><td>Valor</td></tr>${dH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `</table></body></html>`;
-            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; link.click();
+            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); 
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(blob); 
+            link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; 
+            link.click();
         }
 
         window.onload = function() {
