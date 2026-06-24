@@ -310,7 +310,7 @@
                         <div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div>
                         <span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Laranja<span class="text-slate-800">Stays</span></span>
                     </div>
-                    <div id="menu-navegacao-app" class="flex bg-slate-100 p-1 rounded-full relative z-50 transition-opacity">
+                    <div class="flex bg-slate-100 p-1 rounded-full relative z-50">
                         <button onclick="mudarAba('vitrine')" id="btn-vitrine" class="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all"><i class="fas fa-search mr-1.5 hidden sm:inline"></i>Vitrine</button>
                         <button onclick="mudarAba('admin')" id="btn-admin" class="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all"><i class="fas fa-cog mr-1.5 hidden sm:inline"></i>Admin</button>
                         <button onclick="fazerLogout()" id="btn-logout" class="hidden-view text-red-500 hover:text-red-700 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all"><i class="fas fa-sign-out-alt mr-1.5 hidden sm:inline"></i>Sair</button>
@@ -320,7 +320,7 @@
         </nav>
 
         <!-- TELA: VITRINE -->
-        <div id="tela-vitrine" class="min-h-screen pb-12 w-full fade-in relative z-10"><div class="bg-orange-500 py-12 sm:py-16 px-4 relative z-30"><div class="max-w-6xl mx-auto relative"><h1 class="text-3xl sm:text-5xl font-bold text-white mb-8 leading-tight text-center sm:text-left drop-shadow-md">Encontre o refúgio perfeito</h1><div class="flex flex-col lg:flex-row gap-3 w-full items-stretch relative"><div class="flex-1 lg:max-w-[350px] relative" id="container-destino"><div class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-text transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-map-marker-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Destino</label><input type="text" id="busca-cidade" autocomplete="off" onfocus="document.getElementById('dropdown-destinos').classList.remove('hidden-view'); filtrarDestinos()" oninput="filtrarDestinos()" placeholder="Para onde você vai?" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 placeholder-slate-300"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-destinos" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-64 custom-scroll"><div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">Cidades Disponíveis</div><ul id="lista-custom-cidades" class="flex flex-col"></ul></div></div><div class="flex-[1.5] bg-white rounded-xl shadow-lg flex items-center px-4 h-16 transition-all border border-transparent hover:border-slate-200 relative cursor-pointer focus-within:ring-2 focus-within:ring-orange-300 z-30"><i class="far fa-calendar-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Datas da Viagem</label><input type="text" id="busca-datas-range" placeholder="Entrada  -  Saída" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"></div></div><div class="flex-1 lg:max-w-[220px] relative" id="container-hospedes"><div onclick="document.getElementById('dropdown-hospedes').classList.toggle('hidden-view')" class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-pointer transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-user-friends text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 cursor-pointer">Hóspedes</label><input type="text" id="busca-pessoas-display" readonly value="2 Hóspedes" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"><input type="hidden" id="busca-pessoas" value="2"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-hospedes" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-52 overflow-y-auto custom-scroll"><ul id="lista-custom-hospedes" class="flex flex-col"></ul></div></div><button onclick="realizarBusca()" class="bg-slate-900 hover:bg-black text-white px-8 h-16 rounded-xl font-bold text-lg flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap z-30"><i class="fas fa-search mr-2"></i> Buscar</button></div></div></div><div class="max-w-6xl mx-auto px-4 mt-12 relative z-10"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Imóveis Disponíveis</h2></div><div id="lista-imoveis-vitrine" class="flex flex-col gap-5"></div></div></div>
+        <div id="tela-vitrine" class="min-h-screen pb-12 w-full fade-in relative z-10"><div class="bg-orange-500 py-12 sm:py-16 px-4 relative z-30"><div class="max-w-6xl mx-auto relative"><h1 class="text-3xl sm:text-5xl font-bold text-white mb-8 leading-tight text-center sm:text-left drop-shadow-md">Encontre o refúgio perfeito</h1><div class="flex flex-col lg:flex-row gap-3 w-full items-stretch relative"><div class="flex-1 lg:max-w-[350px] relative" id="container-destino"><div class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-text transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-map-marker-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Destino</label><input type="text" id="busca-cidade" autocomplete="off" onfocus="document.getElementById('dropdown-destinos').classList.remove('hidden-view'); filtrarDestinos()" oninput="filtrarDestinos()" placeholder="Para onde você vai?" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 placeholder-slate-300"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-destinos" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-64 custom-scroll"><div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">Cidades Disponíveis</div><ul id="lista-custom-cidades" class="flex flex-col"></ul></div></div><div class="flex-[1.5] bg-white rounded-xl shadow-lg flex items-center px-4 h-16 transition-all border border-transparent hover:border-slate-200 relative cursor-pointer focus-within:ring-2 focus-within:ring-orange-300 z-30" onclick="document.getElementById('busca-datas-range')._flatpickr.open()"><i class="far fa-calendar-alt text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Datas da Viagem</label><input type="text" id="busca-datas-range" placeholder="Entrada  -  Saída" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"></div></div><div class="flex-1 lg:max-w-[220px] relative" id="container-hospedes"><div onclick="document.getElementById('dropdown-hospedes').classList.toggle('hidden-view')" class="bg-white rounded-xl shadow-lg flex items-center px-4 h-16 cursor-pointer transition-all border border-transparent hover:border-slate-200 focus-within:ring-2 focus-within:ring-orange-300 relative z-30"><i class="fas fa-user-friends text-slate-400 text-xl mr-3"></i><div class="flex flex-col w-full"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 cursor-pointer">Hóspedes</label><input type="text" id="busca-pessoas-display" readonly value="2 Hóspedes" class="w-full bg-transparent outline-none text-base font-bold text-slate-800 cursor-pointer"><input type="hidden" id="busca-pessoas" value="2"></div><i class="fas fa-chevron-down text-slate-300 text-xs ml-2"></i></div><div id="dropdown-hospedes" class="hidden-view absolute top-[70px] left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden py-2 max-h-52 overflow-y-auto custom-scroll"><ul id="lista-custom-hospedes" class="flex flex-col"></ul></div></div><button onclick="realizarBusca()" class="bg-slate-900 hover:bg-black text-white px-8 h-16 rounded-xl font-bold text-lg flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap z-30"><i class="fas fa-search mr-2"></i> Buscar</button></div></div></div><div class="max-w-6xl mx-auto px-4 mt-12 relative z-10"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Imóveis Disponíveis</h2></div><div id="lista-imoveis-vitrine" class="flex flex-col gap-5"></div></div></div>
 
         <!-- TELA: ADMIN -->
         <div id="tela-admin" class="hidden-view max-w-7xl mx-auto px-4 mt-8 fade-in min-h-screen">
@@ -409,7 +409,6 @@
 
     </div>
 
-    <!-- SCRIPT DA NUVEM (FIREBASE) + LÓGICA ORIGINAL -->
     <script>
         /* ========================================================================
         ATENÇÃO PAULO: CHAVES DO FIREBASE INSERIDAS!
@@ -479,39 +478,47 @@
 
         // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
-        
-        // Verifica se acessou pelo LINK NOVO BONITO
-        const linkSlug = urlParams.get('link');
+        const agenciaId = urlParams.get('agencia');
+        const linkSlug = urlParams.get('link'); 
 
-        if (linkSlug) {
-            isPublicVitrine = true;
-            hide('tela-login');
-            
-            // Força login anônimo para conseguir ler a pasta de links públicos
-            auth.signInAnonymously().then(() => {
-                db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
-                    if (docSnap.exists) {
-                        let donoId = docSnap.data().uid;
-                        carregarDadosFirebase(donoId);
-                    } else {
+        auth.onAuthStateChanged((user) => {
+            if (agenciaId || linkSlug) {
+                // Fluxo da Vitrine Pública
+                isPublicVitrine = true;
+                hide('tela-login');
+                hide('btn-admin'); 
+                hide('btn-logout');
+                
+                // Só cria usuário anônimo se a pessoa realmente for visitante (não for o dono)
+                if (!user) {
+                    auth.signInAnonymously().catch(e => {
                         hide('tela-loading');
-                        mostrarAlerta("Link de agência não encontrado.");
-                        show('tela-login');
-                    }
-                }).catch(e => {
-                    console.error("Erro ao resolver link:", e);
-                    hide('tela-loading');
-                    mostrarAlerta("Erro de conexão. Verifique suas regras no Firebase.");
-                });
-            }).catch(error => {
-                console.error("Erro no login anônimo:", error);
-                hide('tela-loading');
-                mostrarAlerta("Erro de permissão no servidor. Acesse via Admin.");
-            });
-        } else {
-            // Fluxo Normal (Dono da Agência)
-            auth.onAuthStateChanged((user) => {
-                if (user && !user.isAnonymous) {
+                        mostrarAlerta("Erro de conexão com o servidor. Verifique sua rede.");
+                    });
+                    return; // Para aqui, o onAuthStateChanged vai rodar de novo
+                }
+                
+                if(linkSlug) {
+                    db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
+                        if (docSnap.exists) {
+                            let donoId = docSnap.data().uid;
+                            carregarDadosFirebase(donoId);
+                        } else {
+                            hide('tela-loading');
+                            mostrarAlerta("Link de agência não encontrado.");
+                            show('tela-login');
+                        }
+                    }).catch(e => {
+                        hide('tela-loading');
+                        mostrarAlerta("Erro de conexão. Limpe o cache ou tente em aba anônima.");
+                    });
+                } else {
+                    carregarDadosFirebase(agenciaId);
+                }
+            } else {
+                // Fluxo do Painel Administrativo
+                isPublicVitrine = false;
+                if (user && !user.isAnonymous) { // Garante que é o dono e não um visitante anônimo
                     currentUserUid = user.uid;
                     hide('tela-login');
                     carregarDadosFirebase(user.uid);
@@ -521,8 +528,8 @@
                     show('tela-login');
                     hide('tela-app');
                 }
-            });
-        }
+            }
+        });
 
         async function carregarDadosFirebase(uid) {
             try {
@@ -543,8 +550,8 @@
                 
                 inicializarApp();
             } catch(e) {
-                hide('tela-loading');
                 console.error(e);
+                hide('tela-loading');
                 mostrarAlerta("Erro ao carregar dados do cofre. Verifique as permissões.");
             }
         }
@@ -579,9 +586,7 @@
         }
 
         function fazerLogout() {
-            auth.signOut().then(() => {
-                window.location.reload();
-            });
+            auth.signOut();
         }
         
         function mostrarRecuperarSenha() {
@@ -634,7 +639,7 @@
         }
 
         function inicializarApp() { 
-            hide('tela-loading');
+            hide('tela-loading'); // CORREÇÃO DEFINITIVA: Remove a tela de loading
             show('tela-app');
             
             inicializarCalendarios(); 
@@ -655,8 +660,8 @@
 
             if (isPublicVitrine) {
                 mudarAba('vitrine');
-                hide('menu-navegacao-app');
             } else {
+                show('btn-logout');
                 mudarAba('admin');
                 mudarAbaInternaAdmin('imoveis');
             }
