@@ -675,11 +675,24 @@
             sv('emp-cep', empresaDB.endereco?.cep || ''); sv('emp-cidade', empresaDB.endereco?.cidade || ''); sv('emp-uf', empresaDB.endereco?.uf || ''); sv('emp-rua', empresaDB.endereco?.rua || ''); sv('emp-numero', empresaDB.endereco?.numero || ''); sv('emp-bairro', empresaDB.endereco?.bairro || ''); sv('emp-complemento', empresaDB.endereco?.complemento || '');
             sv('emp-politica', empresaDB.politicaCancelamento || ''); sv('emp-info-gerais', empresaDB.infoGerais || '');
             if(el('preview-logo')) el('preview-logo').innerHTML = empresaDB.logo ? `<img src="${empresaDB.logo}" class="w-full h-full object-contain"><div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><button type="button" onclick="removerLogoEmpresa()" class="bg-red-500 text-white w-8 h-8 rounded-full shadow hover:bg-red-600"><i class="fas fa-trash-alt text-xs"></i></button></div>` : `<i class="fas fa-image text-slate-300 text-3xl"></i>`;
+            
+            // LÓGICA DE WHITE LABEL (Muda a Logo e o Nome no topo)
+            const navBrand = document.querySelector('nav .flex.items-center.cursor-pointer');
+            if(navBrand) {
+                if(empresaDB.nome || empresaDB.logo) {
+                    let lHtml = empresaDB.logo ? `<img src="${empresaDB.logo}" class="h-10 w-10 object-contain rounded-md mr-3">` : `<div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div>`;
+                    let nHtml = empresaDB.nome ? `<span class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">${empresaDB.nome}</span>` : `<span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Laranja<span class="text-slate-800">Stays</span></span>`;
+                    navBrand.innerHTML = lHtml + nHtml;
+                } else {
+                    navBrand.innerHTML = `<div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div><span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Laranja<span class="text-slate-800">Stays</span></span>`;
+                }
+            }
         }
 
         function salvarEmpresa() {
             empresaDB = { nome: val('emp-nome'), cnpj: val('emp-cnpj'), zap: val('emp-zap'), email: val('emp-email'), creci: val('emp-creci'), logo: empresaDB.logo, endereco: { cep: val('emp-cep'), cidade: val('emp-cidade'), uf: val('emp-uf'), rua: val('emp-rua'), numero: val('emp-numero'), bairro: val('emp-bairro'), complemento: val('emp-complemento') }, politicaCancelamento: val('emp-politica'), infoGerais: val('emp-info-gerais') };
             salvarBancoNoStorage();
+            carregarEmpresa(); // Atualiza o topo imediatamente após salvar
             mostrarNotificacao("Perfil atualizado!");
         }
 
