@@ -509,34 +509,45 @@
             }
         }
 
+        // Variável para controlar se o acesso público está sendo resolvido
+        let resolvendoAcessoPublico = false;
+
         if (agenciaId || linkSlug) {
             isPublicVitrine = true;
+            resolvendoAcessoPublico = true; // Marca que estamos resolvendo o acesso público
             hide('tela-login');
             hide('btn-admin'); 
             hide('btn-logout');
             show('tela-loading'); // Garante que o loading está visível
 
             // Chama a função assíncrona para resolver tudo com segurança
-            resolverAcessoPublico();
-            
-        } else {
-            // Fluxo normal do Administrador
-            auth.onAuthStateChanged((user) => {
-                if (user && !user.isAnonymous) {
-                    currentUserUid = user.uid;
-                    hide('tela-login');
-                    show('tela-app');
-                    show('btn-logout');
-                    carregarDadosFirebase(user.uid);
-                } else {
-                    if(user && user.isAnonymous) auth.signOut(); // Limpa se for um restolho de sessão anônima
-                    currentUserUid = null;
-                    hide('tela-loading'); 
-                    show('tela-login');
-                    hide('tela-app');
-                }
+            resolverAcessoPublico().finally(() => {
+                resolvendoAcessoPublico = false; // Marca que terminou de resolver
             });
+            
         }
+
+        // Fluxo normal do Administrador
+        auth.onAuthStateChanged((user) => {
+            // Se estiver resolvendo o acesso público, não faz nada e aguarda
+            if (resolvendoAcessoPublico) return;
+
+            if (user && !user.isAnonymous) {
+                currentUserUid = user.uid;
+                hide('tela-login');
+                show('tela-app');
+                show('btn-logout');
+                carregarDadosFirebase(user.uid);
+            } else if (isPublicVitrine) {
+                // Se for vitrine pública, não desloga se for anônimo
+            } else {
+                if(user && user.isAnonymous) auth.signOut(); // Limpa se for um restolho de sessão anônima
+                currentUserUid = null;
+                hide('tela-loading'); 
+                show('tela-login');
+                hide('tela-app');
+            }
+        });
 
         async function carregarDadosFirebase(uid) {
             try {
