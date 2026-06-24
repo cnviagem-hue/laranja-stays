@@ -438,28 +438,39 @@
         let despesaMes = new Date().getMonth() + 1; let despesaAno = new Date().getFullYear(); let reservasAtuaisExportacao = []; 
         const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        // INSTANCIAS DO FLATPICKR (Admin)
-        let fpReservaCheckin = null;
-        let fpReservaCheckout = null;
-        let fpOrcCheckin = null;
-        let fpOrcCheckout = null;
-
         // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Verifica se acessou pelo ID antigo ou pelo LINK NOVO BONITO
         const agenciaId = urlParams.get('agencia');
+        const linkSlug = urlParams.get('link'); // EX: ?link=caldas-novas-viagens
 
-        if (agenciaId) {
-            // Entrou pelo LINK DA VITRINE MÁGICO (Público)
+        if (agenciaId || linkSlug) {
             isPublicVitrine = true;
             hide('tela-login');
+            hide('btn-admin'); 
+            hide('btn-logout');
             
-            // NOVO: Esconde toda a div (caixa) que contém os botões Vitrine/Admin/Sair
-            let containerBotoesNavegacao = el('btn-admin')?.parentElement;
-            if (containerBotoesNavegacao) {
-                containerBotoesNavegacao.classList.add('hidden-view');
+            // Lógica do Desafio Supremo: Traduzir o Link Bonito para o ID real do banco
+            if(linkSlug) {
+                // Procura na coleção pública quem é o dono desse link
+                db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
+                    if (docSnap.exists) {
+                        // Achou! Puxa o ID real e carrega a loja
+                        let donoId = docSnap.data().uid;
+                        carregarDadosFirebase(donoId);
+                    } else {
+                        mostrarAlerta("Link de agência não encontrado.");
+                        show('tela-login');
+                    }
+                }).catch(e => {
+                    console.error("Erro ao resolver link:", e);
+                    mostrarAlerta("Erro de conexão.");
+                });
+            } else {
+                // Compatibilidade com o link antigo via ID
+                carregarDadosFirebase(agenciaId);
             }
-            
-            carregarDadosFirebase(agenciaId);
         } else {
             // Fluxo Normal (Dono da Agência)
             auth.onAuthStateChanged((user) => {
@@ -533,8 +544,10 @@
         }
 
         function copiarLinkVitrine() {
-            if (!currentUserUid) return;
-            const url = window.location.origin + window.location.pathname + '?agencia=' + currentUserUid;
+            if (!currentUserUid || !empresaDB.slug) return;
+            // GERA O LINK BONITO (Ao invés de ?agencia=ID, usa ?link=nome-da-agencia)
+            const url = window.location.origin + window.location.pathname + '?link=' + empresaDB.slug;
+            
             if(navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(url).then(() => mostrarNotificacao("Link copiado!")).catch(()=>{});
             } else {
@@ -550,60 +563,16 @@
             povoarSelectCategorias(); 
             carregarEmpresa(); 
             
-            // PADRONIZANDO O FLAT PICKR EM TODO O SISTEMA:
-            
-            // 1. Vitrine (Range de Datas)
             if(el('busca-datas-range')) {
                 window.flatpickrInstancia = flatpickr("#busca-datas-range", { mode: "range", dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" }); 
             }
 
-            // 2. Nova Reserva (Com trava inteligente)
-            if(el('reserva-checkin') && el('reserva-checkout')) {
-                fpReservaCheckin = flatpickr("#reserva-checkin", { 
-                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt",
-                    onChange: function(selectedDates, dateStr, instance) {
-                        if(selectedDates[0]) {
-                            let minOut = new Date(selectedDates[0]);
-                            minOut.setDate(minOut.getDate() + 1);
-                            fpReservaCheckout.set("minDate", minOut);
-                            if(fpReservaCheckout.selectedDates[0] && fpReservaCheckout.selectedDates[0] <= selectedDates[0]) {
-                                fpReservaCheckout.clear();
-                            }
-                        }
-                    }
-                });
-                fpReservaCheckout = flatpickr("#reserva-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-            }
-            
-            // 3. Central de Reservas (Filtros)
-            if(el('filtro-reserva-inicio')) flatpickr("#filtro-reserva-inicio", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-            if(el('filtro-reserva-fim')) flatpickr("#filtro-reserva-fim", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-
-            // 4. Orçamentos (Agora dinâmico com trava inteligente)
-            if(el('busca-orc-checkin') && el('busca-orc-checkout')) {
-                fpOrcCheckin = flatpickr("#busca-orc-checkin", { 
-                    dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt",
-                    onChange: function(selectedDates, dateStr, instance) {
-                        if(selectedDates[0]) {
-                            let minOut = new Date(selectedDates[0]);
-                            minOut.setDate(minOut.getDate() + 1);
-                            fpOrcCheckout.set("minDate", minOut);
-                            if(fpOrcCheckout.selectedDates[0] && fpOrcCheckout.selectedDates[0] <= selectedDates[0]) {
-                                fpOrcCheckout.clear();
-                            }
-                        }
-                    }
-                });
-                fpOrcCheckout = flatpickr("#busca-orc-checkout", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-            }
-
-            // 5. Data Nascimento (Titular) e Despesas
-            if(el('reserva-titular-nasc')) flatpickr("#reserva-titular-nasc", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-            if(el('despesa-data')) flatpickr("#despesa-data", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "pt" });
-
-
-            if(el('link-vitrine-display') && currentUserUid) {
-                el('link-vitrine-display').innerText = window.location.origin + window.location.pathname + '?agencia=' + currentUserUid;
+            if(el('link-vitrine-display') && currentUserUid && empresaDB.slug) {
+                // Exibe o link bonito na tela do Admin
+                el('link-vitrine-display').innerText = window.location.origin + window.location.pathname + '?link=' + empresaDB.slug;
+            } else if (el('link-vitrine-display') && currentUserUid) {
+                // Se ainda não salvou o nome, pede pra salvar
+                el('link-vitrine-display').innerText = "Salve o Nome da Empresa primeiro.";
             }
 
             if (isPublicVitrine) {
@@ -689,8 +658,8 @@
             }
 
             // LÓGICA DE COR DINÂMICA DA VITRINE
-            const bannerVitrine = document.querySelector('#tela-vitrine > div.bg-orange-500');
-            const btnBuscarVitrine = document.querySelector('#tela-vitrine button.bg-slate-900');
+            const bannerVitrine = document.querySelector('#tela-vitrine > div.bg-orange-500') || document.querySelector('#tela-vitrine > div[style*="background-color"]');
+            const btnBuscarVitrine = document.querySelector('#tela-vitrine button.bg-slate-900') || document.querySelector('#tela-vitrine button[style*="background-color"]');
             if (bannerVitrine) {
                 if (empresaDB.corTema) {
                     bannerVitrine.style.backgroundColor = empresaDB.corTema;
@@ -710,11 +679,52 @@
             }
         }
 
+        // Função para criar o "Link Bonito" (Slug)
+        function gerarSlug(texto) {
+            if(!texto) return "";
+            return texto.toString().toLowerCase().trim()
+                .replace(/\s+/g, '-')           // Troca espaços por hífens
+                .replace(/[^\w\-]+/g, '')       // Remove caracteres especiais
+                .replace(/\-\-+/g, '-')         // Substitui múltiplos hífens por um só
+                .replace(/^-+/, '')             // Remove hífens do começo
+                .replace(/-+$/, '');            // Remove hífens do fim
+        }
+
         function salvarEmpresa() {
-            empresaDB = { nome: val('emp-nome'), cnpj: val('emp-cnpj'), zap: val('emp-zap'), email: val('emp-email'), creci: val('emp-creci'), logo: empresaDB.logo, corTema: empresaDB.corTema, endereco: { cep: val('emp-cep'), cidade: val('emp-cidade'), uf: val('emp-uf'), rua: val('emp-rua'), numero: val('emp-numero'), bairro: val('emp-bairro'), complemento: val('emp-complemento') }, politicaCancelamento: val('emp-politica'), infoGerais: val('emp-info-gerais') };
+            let nomeEmpresa = val('emp-nome');
+            let slugGerado = gerarSlug(nomeEmpresa);
+
+            empresaDB = { 
+                nome: nomeEmpresa, 
+                slug: slugGerado, // Salva o nome convertido para URL
+                cnpj: val('emp-cnpj'), 
+                zap: val('emp-zap'), 
+                email: val('emp-email'), 
+                creci: val('emp-creci'), 
+                logo: empresaDB.logo, 
+                corTema: empresaDB.corTema, 
+                endereco: { cep: val('emp-cep'), cidade: val('emp-cidade'), uf: val('emp-uf'), rua: val('emp-rua'), numero: val('emp-numero'), bairro: val('emp-bairro'), complemento: val('emp-complemento') }, 
+                politicaCancelamento: val('emp-politica'), 
+                infoGerais: val('emp-info-gerais') 
+            };
+            
             salvarBancoNoStorage();
+
+            // Desafio Supremo: Registra na Nuvem Pública que este Link Bonito pertence a você
+            if(currentUserUid && slugGerado) {
+                db.collection("agencias_urls").doc(slugGerado).set({
+                    uid: currentUserUid,
+                    nome: nomeEmpresa
+                }).catch(e => console.error("Erro ao salvar link público:", e));
+            }
+
             carregarEmpresa(); // Atualiza o topo e a cor imediatamente após salvar
-            mostrarNotificacao("Perfil atualizado!");
+            mostrarNotificacao("Perfil atualizado! Link gerado.");
+            
+            // Atualiza o link na tela
+            if(el('link-vitrine-display')) {
+                el('link-vitrine-display').innerText = window.location.origin + window.location.pathname + '?link=' + empresaDB.slug;
+            }
         }
 
         function extrairCorPredominante(imageElement) {
