@@ -460,6 +460,15 @@
 
         function formatarNumero(n) { return n < 10 ? '0' + n : n; }
 
+        function mostrarTelaErro(mensagem) {
+            document.body.innerHTML = `
+            <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f8fafc; font-family: sans-serif; padding: 20px; text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 60px; color: #f97316; margin-bottom: 20px;"></i>
+                <h2 style="font-size: 24px; font-weight: bold; color: #1e293b; margin-bottom: 12px;">Página Indisponível</h2>
+                <p style="color: #64748b; font-size: 16px; max-width: 400px; line-height: 1.5;">${mensagem}</p>
+            </div>`;
+        }
+
         // ================= BANCO DE DADOS E NUVEM =================
         const dbMockInicial = [{ id: 1, proprietario: { nome: "Paulo Sergio", cpf: "111", zap: "48999", email: "p@e", comissao: 20 }, nome: "Flat Premium Vista Mar", numeroApto: "402", cidade: "Florianópolis - SC", endereco: { cep: "88015-200", cidade: "Florianópolis", uf: "SC", rua: "Av", numero: "100", bairro: "Centro", complemento: "" }, tipo: "Apartamento", checkin: "14:00", checkout: "11:00", pagamento: "PIX", estrutura: "Wi-Fi.", fotos: ["https://placehold.co/600"], capacidadeTotal: 5, pacotes: [{ id: 1, nome: "Anual", inicio: "2026-01-01", fim: "2026-12-31", precoBase: 350, minNoites: 1 }], ajustesTarifa: [], reservas: [], despesas: [] }];
         
@@ -493,19 +502,18 @@
             show('tela-loading');
         }
 
-        // A MÁGICA ACONTECE AQUI: Uma única fila de execução blindada
         auth.onAuthStateChanged(async (user) => {
             if (appInicializado) return;
 
             try {
                 if (isPublicVitrine) {
-                    // 1. Fluxo do Cliente (Vitrine)
+                    hide('tela-login'); // GARANTIA DE QUE A TELA DE LOGIN NÃO APAREÇA
+                    
                     if (!user) {
                         await auth.signInAnonymously();
-                        return; // Pausa aqui. O Firebase vai chamar o onAuthStateChanged de novo agora logado.
+                        return; // Aguarda o Firebase confirmar e recarregar
                     }
 
-                    // Se chegou aqui, já tem permissão de leitura
                     let donoId = agenciaId;
                     
                     if (linkSlug) {
@@ -513,7 +521,9 @@
                         if (docSnap.exists) {
                             donoId = docSnap.data().uid;
                         } else {
-                            throw new Error("Link não encontrado");
+                            hide('tela-loading');
+                            mostrarTelaErro(`O link "<b>${linkSlug}</b>" não foi encontrado ou ainda não foi salvo.<br><br><b>O que fazer:</b> Acesse o seu painel, vá em 'Minha Empresa', preencha os dados e clique no botão laranja 'Salvar' no final da página para ativá-lo.`);
+                            return;
                         }
                     }
 
@@ -523,7 +533,7 @@
                     }
 
                 } else {
-                    // 2. Fluxo do Administrador (Painel)
+                    // Fluxo do Administrador
                     if (user && !user.isAnonymous) {
                         currentUserUid = user.uid;
                         hide('tela-login');
@@ -532,6 +542,7 @@
                         await carregarDadosFirebase(user.uid);
                         appInicializado = true;
                     } else {
+                        if (user && user.isAnonymous) await auth.signOut();
                         currentUserUid = null;
                         hide('tela-loading'); 
                         show('tela-login');
@@ -541,9 +552,12 @@
             } catch (e) {
                 console.error("Erro crítico de inicialização:", e);
                 hide('tela-loading');
-                mostrarAlerta("Não foi possível carregar os dados. Verifique o link fornecido.");
-                show('tela-login');
-                appInicializado = true; // Para de tentar
+                if (isPublicVitrine) {
+                    mostrarTelaErro("Erro ao ler o banco de dados.<br>Certifique-se de ter publicado as <b>Regras do Firestore</b> corretamente lá no painel do Firebase.");
+                } else {
+                    show('tela-login');
+                    mostrarAlerta("Erro de conexão.");
+                }
             }
         });
 
@@ -566,10 +580,8 @@
                 
                 inicializarApp();
             } catch(e) {
-                console.error("Erro no Firestore (Carregar):", e);
-                hide('tela-loading'); 
-                mostrarAlerta("Erro ao carregar dados. Verifique a conexão.");
-                show('tela-login'); // Fallback final
+                // Ao invés de mostrar login, joga o erro para cima para ser tratado como erro grave.
+                throw e; 
             }
         }
 
@@ -1633,11 +1645,7 @@
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#22c55e;color:white;text-align:center;font-weight:bold;">ENTRADAS</th></tr><tr style="background-color:#dcfce7;color:#166534;font-weight:bold;text-align:center;"><td>Hóspede</td><td>Período</td><td>Bruto</td><td>Retido</td></tr>${rH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#ef4444;color:white;text-align:center;font-weight:bold;">SAÍDAS</th></tr><tr style="background-color:#fee2e2;color:#b91c1c;font-weight:bold;text-align:center;"><td>Data</td><td colspan="2">Descrição</td><td>Valor</td></tr>${dH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `</table></body></html>`;
-            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); 
-            const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(blob); 
-            link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; 
-            link.click();
+            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; link.click();
         }
 
         window.onload = function() {
