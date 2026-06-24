@@ -467,22 +467,30 @@
             hide('btn-admin'); 
             hide('btn-logout');
             
-            if(linkSlug) {
-                db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
-                    if (docSnap.exists) {
-                        let donoId = docSnap.data().uid;
-                        carregarDadosFirebase(donoId);
+            const iniciarBuscaPublica = (idDono) => {
+                if(idDono) return carregarDadosFirebase(idDono);
+                
+                // Busca de forma segura na coleção principal permitida, evitando bloqueios
+                db.collection("sistema_saas").where("empresaDB.slug", "==", linkSlug).limit(1).get()
+                .then(querySnapshot => {
+                    if (!querySnapshot.empty) {
+                        carregarDadosFirebase(querySnapshot.docs[0].id);
                     } else {
-                        mostrarAlerta("Link de agência não encontrado.");
-                        show('tela-login');
+                        show('tela-app'); // Força aparecer a tela para o alerta não ficar branco
+                        mostrarAlerta("Página não encontrada com este link.");
                     }
                 }).catch(e => {
-                    console.error("Erro ao resolver link:", e);
-                    mostrarAlerta("Erro de conexão.");
+                    console.error("Erro Firebase:", e);
+                    show('tela-app');
+                    mostrarAlerta("Acesso negado. O Firebase exige permissão pública para leitura.");
                 });
-            } else {
-                carregarDadosFirebase(agenciaId);
-            }
+            };
+
+            // Tenta o Login Anônimo por segurança. Se não estiver ativo no Firebase, tenta direto.
+            auth.signInAnonymously()
+                .then(() => iniciarBuscaPublica(agenciaId))
+                .catch(() => iniciarBuscaPublica(agenciaId));
+
         } else {
             auth.onAuthStateChanged((user) => {
                 if (user) {
