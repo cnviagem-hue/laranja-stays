@@ -424,7 +424,7 @@
             appId: "1:871798036063:web:684906265705dbe8da6dea"
         };
 
-        // 1. Inicializar Firebase
+        // 1. Inicializar Firebase diretamente no SEU banco de dados oficial
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -483,22 +483,29 @@
         const agenciaId = urlParams.get('agencia');
         const linkSlug = urlParams.get('link'); 
 
-        // Função isolada para tratar a conexão
         async function resolverAcessoPublico() {
             try {
-                const docSnap = await db.collection("agencias_urls").doc(linkSlug).get();
-                if (docSnap.exists) {
-                    let donoId = docSnap.data().uid;
-                    await carregarDadosFirebase(donoId);
-                } else {
-                    hide('tela-loading');
-                    mostrarAlerta("Link de agência não encontrado.");
-                    show('tela-login');
+                // Tenta fazer o login anônimo PRIMEIRO e ESPERA concluir.
+                const userCredential = await auth.signInAnonymously();
+                
+                if (linkSlug) {
+                    const docSnap = await db.collection("agencias_urls").doc(linkSlug).get();
+                    if (docSnap.exists) {
+                        let donoId = docSnap.data().uid;
+                        await carregarDadosFirebase(donoId);
+                    } else {
+                        hide('tela-loading');
+                        mostrarAlerta("Link de agência não encontrado.");
+                        show('tela-login');
+                    }
+                } else if (agenciaId) {
+                     await carregarDadosFirebase(agenciaId);
                 }
             } catch(e) {
-                console.error("Erro no Firestore (Link):", e);
+                console.error("Erro no fluxo de acesso público:", e);
                 hide('tela-loading');
-                mostrarAlerta("Não foi possível acessar os dados. Verifique a URL.");
+                mostrarAlerta("Ocorreu um erro de conexão ou o acesso público falhou. Tente novamente mais tarde.");
+                show('tela-login');
             }
         }
 
@@ -507,25 +514,10 @@
             hide('tela-login');
             hide('btn-admin'); 
             hide('btn-logout');
-            
-            // Verifica o status do auth
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    if (linkSlug) {
-                        resolverAcessoPublico();
-                    } else if (agenciaId) {
-                        carregarDadosFirebase(agenciaId);
-                    }
-                } else {
-                    // Se não estiver logado (nem como admin, nem anônimo), faz o login anônimo
-                    auth.signInAnonymously().catch((error) => {
-                        console.error("Erro no login anônimo:", error);
-                        hide('tela-loading');
-                        mostrarAlerta("Ocorreu um erro de conexão. Tente novamente mais tarde.");
-                    });
-                    // O onAuthStateChanged será chamado novamente logo em seguida com o user anônimo
-                }
-            });
+            show('tela-loading'); // Garante que o loading está visível
+
+            // Chama a função assíncrona para resolver tudo com segurança
+            resolverAcessoPublico();
             
         } else {
             // Fluxo normal do Administrador
@@ -539,7 +531,7 @@
                 } else {
                     if(user && user.isAnonymous) auth.signOut(); // Limpa se for um restolho de sessão anônima
                     currentUserUid = null;
-                    hide('tela-loading'); // Garante que se não logar, o loading some
+                    hide('tela-loading'); 
                     show('tela-login');
                     hide('tela-app');
                 }
@@ -566,8 +558,9 @@
                 inicializarApp();
             } catch(e) {
                 console.error("Erro no Firestore (Carregar):", e);
-                hide('tela-loading'); // GARANTIA DE SAÍDA DO LOADING NO ERRO
+                hide('tela-loading'); 
                 mostrarAlerta("Erro ao carregar dados. Verifique a conexão.");
+                show('tela-login'); // Fallback final
             }
         }
 
@@ -593,7 +586,7 @@
         function fazerLogin() {
             const e = val('login-email'); const s = val('login-senha');
             if(!e || !s) return;
-            show('tela-loading'); // Coloquei um loading no botão Entrar também
+            show('tela-loading'); // Feedback visual no login
             auth.signInWithEmailAndPassword(e, s).catch(err => {
                 hide('tela-loading');
                 show('login-erro');
