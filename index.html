@@ -44,31 +44,9 @@
         .status-pago { background-color: #bbf7d0; color: #166534; border-right-color: #86efac; } 
         .status-proprietario { background-color: #e0f2fe; color: #0369a1; border-right-color: #bae6fd; } 
         .status-bloqueado { background-color: #f1f5f9; color: #94a3b8; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #e2e8f0 5px, #e2e8f0 10px); } 
-
-        /* Animação para a Tela de Carregamento (Skeleton) */
-        .pulse-logo {
-            animation: pulseLogo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulseLogo {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: .5; transform: scale(0.95); }
-        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800" onclick="fecharMenusSuspensos(event)">
-
-    <!-- TELA DE CARREGAMENTO (Skeleton Loader) -->
-    <div id="tela-loading" class="fixed inset-0 bg-slate-50 z-[100000] flex flex-col items-center justify-center transition-opacity duration-500">
-        <div id="loading-logo-box" class="w-24 h-24 bg-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl pulse-logo overflow-hidden">
-            <i class="fas fa-home text-white text-5xl"></i>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="w-2 h-2 bg-orange-500 rounded-full animate-ping" style="animation-delay: 0ms"></div>
-            <div class="w-2 h-2 bg-orange-500 rounded-full animate-ping" style="animation-delay: 150ms"></div>
-            <div class="w-2 h-2 bg-orange-500 rounded-full animate-ping" style="animation-delay: 300ms"></div>
-        </div>
-        <p class="text-xs font-bold text-slate-400 mt-4 uppercase tracking-widest">Carregando dados...</p>
-    </div>
 
     <!-- TELA DE LOGIN -->
     <div id="tela-login" class="hidden-view min-h-screen flex items-center justify-center bg-slate-100 z-[9999] fixed inset-0">
@@ -441,8 +419,8 @@
         function mascaraCpfCnpj(o) { let v=o.value.replace(/\D/g,""); if(v.length<=11){v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d{1,2})$/,"$1-$2");}else{v=v.replace(/^(\d{2})(\d)/,"$1.$2");v=v.replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3");v=v.replace(/\.(\d{3})(\d)/,".$1/$2");v=v.replace(/(\d{4})(\d{1,2})$/,"$1-$2");} o.value=v; }
         function mascaraCEP(o) { o.value=o.value.replace(/\D/g,"").replace(/^(\d{5})(\d)/,"$1-$2"); }
         
-        async function buscarCEP(cep) { let c = cep.replace(/\D/g, ""); if(c.length !== 8) return; show('cep-loading'); try { let res = await fetch(`https://viacep.com.br/ws/${c}/json/`); let d = await res.json(); if(!d.erro) { sv('cad-cidade', d.localidade); sv('cad-uf', d.uf); sv('cad-rua', d.logradouro || ''); sv('cad-bairro', d.bairro || ''); el('cad-numero')?.focus(); } } catch(e){} finally { hide('cep-loading'); } }
-        async function buscarCEPEmpresa(cep) { let c = cep.replace(/\D/g, ""); if(c.length !== 8) return; show('emp-cep-loading'); try { let res = await fetch(`https://viacep.com.br/ws/${c}/json/`); let d = await res.json(); if(!d.erro) { sv('emp-cidade', d.localidade); sv('emp-uf', d.uf); sv('emp-rua', d.logradouro || ''); sv('emp-bairro', d.bairro || ''); el('emp-numero')?.focus(); } } catch(e){} finally { hide('emp-cep-loading'); } }
+        async function buscarCEP(cep) { let c = cep.replace(/\D/g, ""); if(c.length !== 8) return; try { let res = await fetch(`https://viacep.com.br/ws/${c}/json/`); let d = await res.json(); if(!d.erro) { sv('cad-cidade', d.localidade); sv('cad-uf', d.uf); sv('cad-rua', d.logradouro || ''); sv('cad-bairro', d.bairro || ''); el('cad-numero')?.focus(); } } catch(e){} }
+        async function buscarCEPEmpresa(cep) { let c = cep.replace(/\D/g, ""); if(c.length !== 8) return; try { let res = await fetch(`https://viacep.com.br/ws/${c}/json/`); let d = await res.json(); if(!d.erro) { sv('emp-cidade', d.localidade); sv('emp-uf', d.uf); sv('emp-rua', d.logradouro || ''); sv('emp-bairro', d.bairro || ''); el('emp-numero')?.focus(); } } catch(e){} }
 
         function mostrarNotificacao(m) { sv('texto-notificacao', m); if(el('texto-notificacao')) el('texto-notificacao').innerText = m; show('notificacao'); setTimeout(() => hide('notificacao'), 3000); }
         function mostrarAlerta(m) { if(el('texto-alerta')) el('texto-alerta').innerHTML = m; show('modal-alerta'); }
@@ -478,32 +456,33 @@
         let categoriasDB = ["Faxina", "Lavanderia", "Manutenção", "Luz", "Condomínio", "Outros"];
 
         let currentUserUid = null;
-        
+        let isPublicVitrine = false;
+
+        // ESTADOS
+        let pacotesEmCriacao = []; let ajustesEmCriacao = []; let fotosEmCriacao = []; let abaAtivaCadastro = 'proprietario'; let imovelEditandoId = null; let imovelExcluirId = null;
+        let mapaMes = 6; let mapaAno = 2026; let acompanhantesTemp = []; let financeiroImovelSelectId = null; let financeiroMesStr = ""; let categoriaEditandoIndex = null;
+        let despesaMes = new Date().getMonth() + 1; let despesaAno = new Date().getFullYear(); let reservasAtuaisExportacao = []; 
+        const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
+        
         const agenciaId = urlParams.get('agencia');
         const linkSlug = urlParams.get('link'); 
         
-        let isPublicVitrine = !!(agenciaId || linkSlug);
+        isPublicVitrine = !!(agenciaId || linkSlug);
         let appInicializado = false;
-
-        // TRAVA IMEDIATA DE VISUALIZAÇÃO: Se for link público, asfixia o painel de login e botões admin no momento zero
-        if (isPublicVitrine) {
-            hide('tela-login');
-            hide('btn-admin'); 
-            hide('btn-logout');
-            if(el('btn-vitrine')) el('btn-vitrine').classList.add('pointer-events-none');
-            show('tela-loading');
-        }
 
         auth.onAuthStateChanged(async (user) => {
             if (appInicializado) return;
 
             try {
                 if (isPublicVitrine) {
+                    hide('tela-login');
                     
                     if (!user) {
                         await auth.signInAnonymously();
-                        return; // O Firebase fará nova chamada ao onAuthStateChanged após criar o anônimo
+                        return; // Aguarda o Firebase confirmar e recarregar
                     }
 
                     let donoId = agenciaId;
@@ -513,8 +492,7 @@
                         if (docSnap.exists) {
                             donoId = docSnap.data().uid;
                         } else {
-                            hide('tela-loading');
-                            mostrarTelaErro(`O link "<b>${linkSlug}</b>" não foi encontrado ou ainda não foi salvo.<br><br><b>O que fazer:</b> Acesse o seu painel, vá em 'Minha Empresa', preencha os dados e clique no botão laranja 'Salvar'.`);
+                            mostrarTelaErro(`O link "<b>${linkSlug}</b>" não foi encontrado ou ainda não foi salvo.<br><br><b>O que fazer:</b> Acesse o seu painel, vá em 'Minha Empresa', preencha os dados e clique no botão laranja 'Salvar' no final da página para ativá-lo.`);
                             return;
                         }
                     }
@@ -525,31 +503,25 @@
                     }
 
                 } else {
-                    // FLUXO DO ADMINISTRADOR (Sem '?link=')
+                    // Fluxo do Administrador
                     if (user && !user.isAnonymous) {
                         currentUserUid = user.uid;
                         hide('tela-login');
                         show('tela-app');
                         show('btn-logout');
-                        show('btn-admin');
                         await carregarDadosFirebase(user.uid);
                         appInicializado = true;
                     } else {
-                        if (user && user.isAnonymous) {
-                            await auth.signOut();
-                            return;
-                        }
+                        if (user && user.isAnonymous) await auth.signOut();
                         currentUserUid = null;
-                        hide('tela-loading'); 
                         show('tela-login');
                         hide('tela-app');
                     }
                 }
             } catch (e) {
-                console.error("Erro na inicialização:", e);
-                hide('tela-loading');
+                console.error("Erro crítico de inicialização:", e);
                 if (isPublicVitrine) {
-                    mostrarTelaErro("Erro ao ler o banco de dados. Tente atualizar a página.");
+                    mostrarTelaErro("Erro ao ler o banco de dados.<br>Certifique-se de ter publicado as <b>Regras do Firestore</b> corretamente lá no painel do Firebase.");
                 } else {
                     show('tela-login');
                     mostrarAlerta("Erro de conexão.");
@@ -558,22 +530,26 @@
         });
 
         async function carregarDadosFirebase(uid) {
-            const docSnap = await db.collection("sistema_saas").doc(uid).get();
-            if (docSnap.exists) {
-                const data = docSnap.data();
-                imoveisDB = data.imoveisDB || [];
-                empresaDB = data.empresaDB || empresaDB;
-                orcamentosDB = data.orcamentosDB || [];
-                categoriasDB = data.categoriasDB || categoriasDB;
-            } else if (!isPublicVitrine) {
-                imoveisDB = dbMockInicial;
-                await sincronizarNuvem();
+            try {
+                const docSnap = await db.collection("sistema_saas").doc(uid).get();
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    imoveisDB = data.imoveisDB || [];
+                    empresaDB = data.empresaDB || empresaDB;
+                    orcamentosDB = data.orcamentosDB || [];
+                    categoriasDB = data.categoriasDB || categoriasDB;
+                } else if (!isPublicVitrine) {
+                    imoveisDB = dbMockInicial;
+                    await sincronizarNuvem();
+                }
+                
+                // Trata garantias
+                imoveisDB.forEach(im => { if(!im.despesas) im.despesas=[]; if(!im.ajustesTarifa) im.ajustesTarifa=[]; if(!im.reservas) im.reservas=[]; if(im.proprietario && im.proprietario.comissao === undefined) im.proprietario.comissao=20; });
+                
+                inicializarApp();
+            } catch(e) {
+                throw e; 
             }
-            
-            // Trata garantias
-            imoveisDB.forEach(im => { if(!im.despesas) im.despesas=[]; if(!im.ajustesTarifa) im.ajustesTarifa=[]; if(!im.reservas) im.reservas=[]; if(im.proprietario && im.proprietario.comissao === undefined) im.proprietario.comissao=20; });
-            
-            inicializarApp();
         }
 
         async function sincronizarNuvem() {
@@ -598,9 +574,7 @@
         function fazerLogin() {
             const e = val('login-email'); const s = val('login-senha');
             if(!e || !s) return;
-            show('tela-loading'); // Feedback visual no login
             auth.signInWithEmailAndPassword(e, s).catch(err => {
-                hide('tela-loading');
                 show('login-erro');
             });
         }
@@ -659,7 +633,6 @@
         }
 
         function inicializarApp() { 
-            hide('tela-loading'); 
             show('tela-app');
             
             inicializarCalendarios();
@@ -680,14 +653,11 @@
 
             if (isPublicVitrine) {
                 mudarAba('vitrine');
-                // TRAVA ABSOLUTA: Esconde os botões de admin de novo
                 hide('btn-admin');
                 hide('btn-logout');
             } else {
                 mudarAba('admin');
                 mudarAbaInternaAdmin('imoveis');
-                show('btn-admin');
-                show('btn-logout');
             }
         }
 
@@ -754,12 +724,12 @@
         function mudarAba(aba) {
             if (aba === 'vitrine') { 
                 show('tela-vitrine'); hide('tela-admin'); 
-                if(el('btn-vitrine')) el('btn-vitrine').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                if(el('btn-admin')) el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                el('btn-vitrine').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                el('btn-admin').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
             } else { 
                 hide('tela-vitrine'); show('tela-admin'); 
-                if(el('btn-vitrine')) el('btn-vitrine').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
-                if(el('btn-admin')) el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                el('btn-vitrine').className="text-slate-500 hover:text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all"; 
+                el('btn-admin').className="bg-white text-orange-600 shadow-sm px-4 py-2 rounded-full text-xs font-bold transition-all"; 
                 renderizarMapaDisponibilidade(); renderizarListaReservasAdmin(); 
             }
         }
@@ -1641,15 +1611,11 @@
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#22c55e;color:white;text-align:center;font-weight:bold;">ENTRADAS</th></tr><tr style="background-color:#dcfce7;color:#166534;font-weight:bold;text-align:center;"><td>Hóspede</td><td>Período</td><td>Bruto</td><td>Retido</td></tr>${rH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#ef4444;color:white;text-align:center;font-weight:bold;">SAÍDAS</th></tr><tr style="background-color:#fee2e2;color:#b91c1c;font-weight:bold;text-align:center;"><td>Data</td><td colspan="2">Descrição</td><td>Valor</td></tr>${dH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `</table></body></html>`;
-            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); 
-            const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(blob); 
-            link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; 
-            link.click();
+            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; link.click();
         }
 
         window.onload = function() {
-            // A inicialização agora acontece de forma segura após o Firebase
+            // A inicialização acontece de forma segura após o Firebase
         };
     </script>
 </body>
