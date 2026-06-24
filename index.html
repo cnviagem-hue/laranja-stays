@@ -687,22 +687,86 @@
                     navBrand.innerHTML = `<div class="bg-orange-500 p-2.5 rounded-xl mr-3 flex items-center justify-center shadow-sm"><i class="fas fa-home text-white"></i></div><span class="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Laranja<span class="text-slate-800">Stays</span></span>`;
                 }
             }
+
+            // LÓGICA DE COR DINÂMICA DA VITRINE
+            const bannerVitrine = document.querySelector('#tela-vitrine > div.bg-orange-500');
+            const btnBuscarVitrine = document.querySelector('#tela-vitrine button.bg-slate-900');
+            if (bannerVitrine) {
+                if (empresaDB.corTema) {
+                    bannerVitrine.style.backgroundColor = empresaDB.corTema;
+                    bannerVitrine.classList.remove('bg-orange-500'); // Remove o laranja padrão
+                    if (btnBuscarVitrine) {
+                        btnBuscarVitrine.style.backgroundColor = '#1e293b'; // Mantém o botão de busca escuro para dar contraste
+                        btnBuscarVitrine.classList.remove('bg-slate-900', 'hover:bg-black');
+                    }
+                } else {
+                    bannerVitrine.style.backgroundColor = '';
+                    bannerVitrine.classList.add('bg-orange-500');
+                    if (btnBuscarVitrine) {
+                        btnBuscarVitrine.style.backgroundColor = '';
+                        btnBuscarVitrine.classList.add('bg-slate-900', 'hover:bg-black');
+                    }
+                }
+            }
         }
 
         function salvarEmpresa() {
-            empresaDB = { nome: val('emp-nome'), cnpj: val('emp-cnpj'), zap: val('emp-zap'), email: val('emp-email'), creci: val('emp-creci'), logo: empresaDB.logo, endereco: { cep: val('emp-cep'), cidade: val('emp-cidade'), uf: val('emp-uf'), rua: val('emp-rua'), numero: val('emp-numero'), bairro: val('emp-bairro'), complemento: val('emp-complemento') }, politicaCancelamento: val('emp-politica'), infoGerais: val('emp-info-gerais') };
+            empresaDB = { nome: val('emp-nome'), cnpj: val('emp-cnpj'), zap: val('emp-zap'), email: val('emp-email'), creci: val('emp-creci'), logo: empresaDB.logo, corTema: empresaDB.corTema, endereco: { cep: val('emp-cep'), cidade: val('emp-cidade'), uf: val('emp-uf'), rua: val('emp-rua'), numero: val('emp-numero'), bairro: val('emp-bairro'), complemento: val('emp-complemento') }, politicaCancelamento: val('emp-politica'), infoGerais: val('emp-info-gerais') };
             salvarBancoNoStorage();
-            carregarEmpresa(); // Atualiza o topo imediatamente após salvar
+            carregarEmpresa(); // Atualiza o topo e a cor imediatamente após salvar
             mostrarNotificacao("Perfil atualizado!");
+        }
+
+        function extrairCorPredominante(imageElement) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = imageElement.width;
+            canvas.height = imageElement.height;
+            ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let r = 0, g = 0, b = 0, count = 0;
+            
+            // Pula pixels para processar mais rápido (amostragem) e ignora branco/transparente
+            for (let i = 0; i < imageData.length; i += 16) {
+                if (imageData[i+3] > 0 && (imageData[i] < 240 || imageData[i+1] < 240 || imageData[i+2] < 240)) { // Ignora muito transparentes e muito brancos
+                    r += imageData[i];
+                    g += imageData[i+1];
+                    b += imageData[i+2];
+                    count++;
+                }
+            }
+            if (count === 0) return null;
+            r = Math.floor(r / count);
+            g = Math.floor(g / count);
+            b = Math.floor(b / count);
+            return `rgb(${r}, ${g}, ${b})`;
         }
 
         function processarLogoEmpresa(e) {
             const file = e.target.files[0]; if(!file || !file.type.match(/image.*/)) return;
-            mostrarNotificacao("Processando...");
-            const reader = new FileReader(); reader.onload = function(ev) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, 400, 400); empresaDB.logo = canvas.toDataURL('image/png', 0.9); carregarEmpresa(); el('input-logo-empresa').value = ""; }; img.src = ev.target.result; }; reader.readAsDataURL(file);
+            mostrarNotificacao("Lendo cores da logo...");
+            const reader = new FileReader(); 
+            reader.onload = function(ev) { 
+                const img = new Image(); 
+                img.onload = function() { 
+                    const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, 400, 400); 
+                    empresaDB.logo = canvas.toDataURL('image/png', 0.9); 
+                    
+                    // Extrai a cor!
+                    const cor = extrairCorPredominante(img);
+                    if(cor) empresaDB.corTema = cor;
+
+                    carregarEmpresa(); 
+                    el('input-logo-empresa').value = ""; 
+                    mostrarNotificacao("Logo e Tema atualizados! Não esqueça de Salvar.");
+                }; 
+                img.src = ev.target.result; 
+            }; 
+            reader.readAsDataURL(file);
         }
 
-        function removerLogoEmpresa() { empresaDB.logo = ""; carregarEmpresa(); }
+        function removerLogoEmpresa() { empresaDB.logo = ""; empresaDB.corTema = ""; carregarEmpresa(); }
 
         function gerarVoucher(imovelId, reservaId) {
             const im = imoveisDB.find(i => i.id == imovelId); const res = im?.reservas.find(r => r.id == reservaId); if(!im || !res) return;
