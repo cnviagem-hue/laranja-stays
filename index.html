@@ -424,7 +424,7 @@
             appId: "1:871798036063:web:684906265705dbe8da6dea"
         };
 
-        // 1. Inicializar Firebase diretamente no SEU banco de dados oficial
+        // 1. Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -479,8 +479,28 @@
 
         // LÓGICA DE INICIALIZAÇÃO FIREBASE (Login e Nuvem)
         const urlParams = new URLSearchParams(window.location.search);
+        
         const agenciaId = urlParams.get('agencia');
         const linkSlug = urlParams.get('link'); 
+
+        // Função isolada para tratar a conexão
+        async function resolverAcessoPublico() {
+            try {
+                const docSnap = await db.collection("agencias_urls").doc(linkSlug).get();
+                if (docSnap.exists) {
+                    let donoId = docSnap.data().uid;
+                    await carregarDadosFirebase(donoId);
+                } else {
+                    hide('tela-loading');
+                    mostrarAlerta("Link de agência não encontrado.");
+                    show('tela-login');
+                }
+            } catch(e) {
+                console.error("Erro no Firestore (Link):", e);
+                hide('tela-loading');
+                mostrarAlerta("Não foi possível acessar os dados. Verifique a URL.");
+            }
+        }
 
         if (agenciaId || linkSlug) {
             isPublicVitrine = true;
@@ -488,45 +508,27 @@
             hide('btn-admin'); 
             hide('btn-logout');
             
+            // Verifica o status do auth
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     if (linkSlug) {
-                        db.collection("agencias_urls").doc(linkSlug).get().then(docSnap => {
-                            if (docSnap.exists) {
-                                let donoId = docSnap.data().uid;
-                                if(user.uid === donoId && !user.isAnonymous) {
-                                    isPublicVitrine = false;
-                                    show('btn-admin');
-                                    show('btn-logout');
-                                }
-                                carregarDadosFirebase(donoId);
-                            } else {
-                                hide('tela-loading');
-                                mostrarAlerta("Link de agência não encontrado.");
-                                show('tela-login');
-                            }
-                        }).catch(e => {
-                            console.error("Erro ao resolver link:", e);
-                            hide('tela-loading');
-                            mostrarAlerta("Erro de conexão com o link.");
-                        });
+                        resolverAcessoPublico();
                     } else if (agenciaId) {
-                        if(user.uid === agenciaId && !user.isAnonymous) {
-                            isPublicVitrine = false;
-                            show('btn-admin');
-                            show('btn-logout');
-                        }
                         carregarDadosFirebase(agenciaId);
                     }
                 } else {
-                    auth.signInAnonymously().catch(error => {
+                    // Se não estiver logado (nem como admin, nem anônimo), faz o login anônimo
+                    auth.signInAnonymously().catch((error) => {
                         console.error("Erro no login anônimo:", error);
                         hide('tela-loading');
-                        mostrarAlerta("Erro ao acessar a vitrine. Verifique as configurações de Login Anônimo.");
+                        mostrarAlerta("Ocorreu um erro de conexão. Tente novamente mais tarde.");
                     });
+                    // O onAuthStateChanged será chamado novamente logo em seguida com o user anônimo
                 }
             });
+            
         } else {
+            // Fluxo normal do Administrador
             auth.onAuthStateChanged((user) => {
                 if (user && !user.isAnonymous) {
                     currentUserUid = user.uid;
@@ -535,9 +537,9 @@
                     show('btn-logout');
                     carregarDadosFirebase(user.uid);
                 } else {
-                    if(user && user.isAnonymous) auth.signOut();
+                    if(user && user.isAnonymous) auth.signOut(); // Limpa se for um restolho de sessão anônima
                     currentUserUid = null;
-                    hide('tela-loading');
+                    hide('tela-loading'); // Garante que se não logar, o loading some
                     show('tela-login');
                     hide('tela-app');
                 }
@@ -563,9 +565,9 @@
                 
                 inicializarApp();
             } catch(e) {
-                console.error(e);
-                hide('tela-loading');
-                mostrarAlerta("Erro ao carregar dados do cofre. Verifique as permissões.");
+                console.error("Erro no Firestore (Carregar):", e);
+                hide('tela-loading'); // GARANTIA DE SAÍDA DO LOADING NO ERRO
+                mostrarAlerta("Erro ao carregar dados. Verifique a conexão.");
             }
         }
 
@@ -591,7 +593,7 @@
         function fazerLogin() {
             const e = val('login-email'); const s = val('login-senha');
             if(!e || !s) return;
-            show('tela-loading');
+            show('tela-loading'); // Coloquei um loading no botão Entrar também
             auth.signInWithEmailAndPassword(e, s).catch(err => {
                 hide('tela-loading');
                 show('login-erro');
@@ -604,7 +606,7 @@
         
         function mostrarRecuperarSenha() {
             hide('login-erro');
-            sv('recuperar-email', val('login-email'));
+            sv('recuperar-email', val('login-email')); 
             el('recuperar-mensagem').classList.add('hidden-view');
             show('modal-recuperar-senha');
         }
@@ -652,7 +654,7 @@
         }
 
         function inicializarApp() { 
-            hide('tela-loading');
+            hide('tela-loading'); // ESCONDE O SKELETON QUANDO TUDO ESTIVER PRONTO
             show('tela-app');
             
             inicializarCalendarios();
