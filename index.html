@@ -424,7 +424,7 @@
             appId: "1:871798036063:web:684906265705dbe8da6dea"
         };
 
-        // 1. Inicializar Firebase diretamente no SEU banco de dados oficial
+        // 1. Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -482,70 +482,68 @@
         
         const agenciaId = urlParams.get('agencia');
         const linkSlug = urlParams.get('link'); 
+        
+        isPublicVitrine = !!(agenciaId || linkSlug);
+        let appInicializado = false;
 
-        async function resolverAcessoPublico() {
-            try {
-                // Tenta fazer o login anônimo PRIMEIRO e ESPERA concluir.
-                const userCredential = await auth.signInAnonymously();
-                
-                if (linkSlug) {
-                    const docSnap = await db.collection("agencias_urls").doc(linkSlug).get();
-                    if (docSnap.exists) {
-                        let donoId = docSnap.data().uid;
-                        await carregarDadosFirebase(donoId);
-                    } else {
-                        hide('tela-loading');
-                        mostrarAlerta("Link de agência não encontrado.");
-                        show('tela-login');
-                    }
-                } else if (agenciaId) {
-                     await carregarDadosFirebase(agenciaId);
-                }
-            } catch(e) {
-                console.error("Erro no fluxo de acesso público:", e);
-                hide('tela-loading');
-                mostrarAlerta("Ocorreu um erro de conexão ou o acesso público falhou. Tente novamente mais tarde.");
-                show('tela-login');
-            }
-        }
-
-        // Variável para controlar se o acesso público está sendo resolvido
-        let resolvendoAcessoPublico = false;
-
-        if (agenciaId || linkSlug) {
-            isPublicVitrine = true;
-            resolvendoAcessoPublico = true; // Marca que estamos resolvendo o acesso público
+        if (isPublicVitrine) {
             hide('tela-login');
             hide('btn-admin'); 
             hide('btn-logout');
-            show('tela-loading'); // Garante que o loading está visível
-
-            // Chama a função assíncrona para resolver tudo com segurança
-            resolverAcessoPublico().finally(() => {
-                resolvendoAcessoPublico = false; // Marca que terminou de resolver
-            });
-            
+            show('tela-loading');
         }
 
-        // Fluxo normal do Administrador
-        auth.onAuthStateChanged((user) => {
-            // Se estiver resolvendo o acesso público, não faz nada e aguarda
-            if (resolvendoAcessoPublico) return;
+        // A MÁGICA ACONTECE AQUI: Uma única fila de execução blindada
+        auth.onAuthStateChanged(async (user) => {
+            if (appInicializado) return;
 
-            if (user && !user.isAnonymous) {
-                currentUserUid = user.uid;
-                hide('tela-login');
-                show('tela-app');
-                show('btn-logout');
-                carregarDadosFirebase(user.uid);
-            } else if (isPublicVitrine) {
-                // Se for vitrine pública, não desloga se for anônimo
-            } else {
-                if(user && user.isAnonymous) auth.signOut(); // Limpa se for um restolho de sessão anônima
-                currentUserUid = null;
-                hide('tela-loading'); 
+            try {
+                if (isPublicVitrine) {
+                    // 1. Fluxo do Cliente (Vitrine)
+                    if (!user) {
+                        await auth.signInAnonymously();
+                        return; // Pausa aqui. O Firebase vai chamar o onAuthStateChanged de novo agora logado.
+                    }
+
+                    // Se chegou aqui, já tem permissão de leitura
+                    let donoId = agenciaId;
+                    
+                    if (linkSlug) {
+                        const docSnap = await db.collection("agencias_urls").doc(linkSlug).get();
+                        if (docSnap.exists) {
+                            donoId = docSnap.data().uid;
+                        } else {
+                            throw new Error("Link não encontrado");
+                        }
+                    }
+
+                    if (donoId) {
+                        await carregarDadosFirebase(donoId);
+                        appInicializado = true;
+                    }
+
+                } else {
+                    // 2. Fluxo do Administrador (Painel)
+                    if (user && !user.isAnonymous) {
+                        currentUserUid = user.uid;
+                        hide('tela-login');
+                        show('tela-app');
+                        show('btn-logout');
+                        await carregarDadosFirebase(user.uid);
+                        appInicializado = true;
+                    } else {
+                        currentUserUid = null;
+                        hide('tela-loading'); 
+                        show('tela-login');
+                        hide('tela-app');
+                    }
+                }
+            } catch (e) {
+                console.error("Erro crítico de inicialização:", e);
+                hide('tela-loading');
+                mostrarAlerta("Não foi possível carregar os dados. Verifique o link fornecido.");
                 show('tela-login');
-                hide('tela-app');
+                appInicializado = true; // Para de tentar
             }
         });
 
@@ -1635,12 +1633,16 @@
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#22c55e;color:white;text-align:center;font-weight:bold;">ENTRADAS</th></tr><tr style="background-color:#dcfce7;color:#166534;font-weight:bold;text-align:center;"><td>Hóspede</td><td>Período</td><td>Bruto</td><td>Retido</td></tr>${rH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `<tr><td colspan="4"></td></tr><tr><th colspan="4" style="background-color:#ef4444;color:white;text-align:center;font-weight:bold;">SAÍDAS</th></tr><tr style="background-color:#fee2e2;color:#b91c1c;font-weight:bold;text-align:center;"><td>Data</td><td colspan="2">Descrição</td><td>Valor</td></tr>${dH||`<tr><td colspan="4" style="text-align:center;">Vazio</td></tr>`}`;
             html += `</table></body></html>`;
-            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; link.click();
+            const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}); 
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(blob); 
+            link.download = `DRE_${im.nome.replace(/\s+/g,'_')}.xls`; 
+            link.click();
         }
 
         window.onload = function() {
             // A inicialização agora acontece de forma segura após o Firebase
-        }
+        };
     </script>
 </body>
 </html>
