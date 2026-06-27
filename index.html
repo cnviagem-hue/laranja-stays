@@ -313,6 +313,39 @@
                             </div>
                         </div>
 
+                        <!-- NOVO SISTEMA DE AJUSTE EM MASSA (%) -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+                            <div class="bg-[#dcfce7] p-4 border-b border-[#bbf7d0] flex justify-between items-center">
+                                <h4 class="text-sm font-bold text-[#166534]"><i class="fas fa-percentage mr-2"></i>Ajuste em Massa (%)</h4>
+                            </div>
+                            <div class="p-5">
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Data Início</label>
+                                        <input type="date" id="ajuste-lote-in" onchange="atualizarCheckoutAutomatico('ajuste-lote-in', 'ajuste-lote-out')" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-green-500 outline-none text-sm font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Data Fim</label>
+                                        <input type="date" id="ajuste-lote-out" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-green-500 outline-none text-sm font-medium">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 mb-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Ação</label>
+                                        <select id="ajuste-lote-tipo" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-green-500 outline-none text-sm font-medium">
+                                            <option value="aumento">Acrescentar (+)</option>
+                                            <option value="desconto">Descontar (-)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Porcentagem (%)</label>
+                                        <input type="number" id="ajuste-lote-valor" placeholder="Ex: 10" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-green-500 outline-none text-sm font-medium">
+                                    </div>
+                                </div>
+                                <button type="button" onclick="aplicarAjusteSazonalMassa()" class="w-full bg-[#16a34a] text-white hover:bg-[#15803d] px-4 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Aplicar Ajuste de Preço</button>
+                            </div>
+                        </div>
+
                         <!-- GESTÃO DO CALENDÁRIO -->
                         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
@@ -1108,6 +1141,54 @@
 
         // ================= NOVO SISTEMA DE TARIFAS (LOTE E DIÁRIO) =================
 
+        function aplicarAjusteSazonalMassa() {
+            const dtIn = val('ajuste-lote-in');
+            const dtOut = val('ajuste-lote-out');
+            const tipo = val('ajuste-lote-tipo');
+            const perc = parseFloat(val('ajuste-lote-valor'));
+
+            if (!dtIn || !dtOut || isNaN(perc) || perc <= 0) {
+                mostrarAlerta("Preencha as datas e informe uma porcentagem válida maior que zero.");
+                return;
+            }
+
+            let dI = new Date(dtIn + 'T00:00:00');
+            let dO = new Date(dtOut + 'T00:00:00');
+
+            if (dO < dI) {
+                mostrarAlerta("A Data Fim deve ser maior ou igual a Data Início.");
+                return;
+            }
+
+            let diasAlterados = 0;
+
+            for (let d = new Date(dI); d <= dO; d.setDate(d.getDate() + 1)) {
+                let dtStr = d.toISOString().split('T')[0];
+                let diaIdx = calendarioEmCriacao.findIndex(x => x.data === dtStr);
+                
+                if (diaIdx > -1) {
+                    let valorAntigo = calendarioEmCriacao[diaIdx].valor;
+                    let modificador = perc / 100;
+                    let novoValor = tipo === 'aumento' ? valorAntigo * (1 + modificador) : valorAntigo * (1 - modificador);
+                    
+                    calendarioEmCriacao[diaIdx].valor = Math.round(novoValor); // Arredonda para não ter centavos quebrados em tarifas
+                    diasAlterados++;
+                }
+            }
+
+            if (diasAlterados === 0) {
+                mostrarAlerta("Nenhuma tarifa encontrada no período selecionado. Você precisa cadastrar tarifas antes de ajustá-las.");
+                return;
+            }
+
+            sv('ajuste-lote-in', '');
+            sv('ajuste-lote-out', '');
+            sv('ajuste-lote-valor', '');
+            
+            renderizarFiltrosCalendarioGestao();
+            mostrarNotificacao(`Ajuste de ${perc}% aplicado com sucesso em ${diasAlterados} diárias!`);
+        }
+
         function aplicarTarifasEmLote() {
             const nome = val('lote-tarifa-nome').trim();
             const dtIn = val('lote-tarifa-in');
@@ -1790,13 +1871,13 @@
                 if(inf.bloqueioMinNoites) { if(!minNoitesBloqueio || inf.minNoites > minNoitesBloqueio) minNoitesBloqueio = inf.minNoites; }
                 if(!inf.disponivel || inf.bloqueioMinNoites) return; 
                 count++; 
-                if(div) div.insertAdjacentHTML('beforeend', `<div class="bg-white border border-slate-200 p-4 rounded-xl mb-2 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm hover:border-orange-200 transition-colors"><div><h4 class="font-bold text-[#0071c2]">${im.nome}</h4><p class="text-xs text-slate-500 mt-1">${String(inf.noites).padStart(2,'0')} noites - <span class="text-sm font-normal text-slate-700">R$ ${inf.precoTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></p></div><button onclick="abrirModalGerarOrcamento(${im.id}, ${inf.precoTotal}, '${ci}', '${co}', ${ps})" class="bg-slate-800 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all w-full sm:w-auto">Gerar Orçamento</button></div>`); 
+                if(div) div.insertAdjacentHTML('beforeend', `<div class="bg-white border border-slate-200 p-4 rounded-xl mb-2 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm hover:border-orange-200 transition-colors"><div><h4 class="font-bold text-[#0071c2]">${im.nome}</h4><p class="text-xs text-slate-500 mt-1">${String(inf.noites).padStart(2,'0')} noites - <span class="text-sm font-normal text-slate-700">R$ ${(inf.precoTotal || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></p></div><button onclick="abrirModalGerarOrcamento(${im.id}, ${inf.precoTotal}, '${ci}', '${co}', ${ps})" class="bg-slate-800 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all w-full sm:w-auto">Gerar Orçamento</button></div>`); 
             });
             if(count===0 && div) {
                 if(minNoitesBloqueio) {
                     div.innerHTML=`<div class="text-center p-6 text-orange-600 font-bold bg-orange-50 rounded-xl border border-orange-200">Atenção: A regra tarifária exige no mínimo ${minNoitesBloqueio} diárias.</div>`;
                 } else {
-                    div.innerHTML='<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100">Sem disponibilidade.</div>';
+                    div.innerHTML='<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100">Sem disponibilidade. O calendário não tem tarifas geradas para este período ou há conflito.</div>';
                 }
             }
         }
