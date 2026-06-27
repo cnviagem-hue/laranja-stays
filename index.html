@@ -522,6 +522,9 @@
         const val = id => el(id)?.value || '';
         const sv = (id, v) => { if(el(id)) el(id).value = v; };
         const setVal = sv; 
+        
+        // FORMATADOR LOCAL DE DATAS (Impede que o Fuso Horário mude o dia)
+        const formatarDataLocalISO = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
         // Mascaras e ViaCEP
         function mascaraTelefone(o) { let v=o.value.replace(/\D/g,""); if(v.length>11)v=v.substring(0,11); if(v.length>10)v=v.replace(/^(\d{2})(\d{5})(\d{4})/,"($1) $2-$3"); else if(v.length>6)v=v.replace(/^(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3"); else if(v.length>2)v=v.replace(/^(\d{2})(\d{0,5})/,"($1) $2"); o.value=v; }
@@ -541,7 +544,7 @@
             if (valIn) {
                 const dataIn = new Date(valIn + 'T12:00:00');
                 dataIn.setDate(dataIn.getDate() + 1);
-                document.getElementById(idOut).value = dataIn.toISOString().split('T')[0];
+                document.getElementById(idOut).value = formatarDataLocalISO(dataIn);
             }
         }
 
@@ -1165,7 +1168,7 @@
             let diasAlterados = 0;
 
             for (let d = new Date(dI); d <= dO; d.setDate(d.getDate() + 1)) {
-                let dtStr = d.toISOString().split('T')[0];
+                let dtStr = formatarDataLocalISO(d);
                 let diaIdx = calendarioEmCriacao.findIndex(x => x.data === dtStr);
                 
                 if (diaIdx > -1) {
@@ -1227,7 +1230,7 @@
             // Loop de data inicio a data fim
             for (let d = new Date(dI); d <= dO; d.setDate(d.getDate() + 1)) {
                 if (diasAtivos.includes(d.getDay())) {
-                    let dtStr = d.toISOString().split('T')[0];
+                    let dtStr = formatarDataLocalISO(d);
                     
                     // Verifica se o dia já existe e atualiza, senão cria um novo
                     let diaExistenteIndex = calendarioEmCriacao.findIndex(x => x.data === dtStr);
@@ -1417,14 +1420,18 @@
         function validarESalvarImovel() {
             const n = val('cad-nome'); 
             if(!n) { mudarAbaCadastro('imovel'); mostrarAlerta("Preencha o Nome do Imóvel."); return; }
-            if(!calendarioEmCriacao.length) { mudarAbaCadastro('tarifas'); mostrarAlerta("Você precisa gerar as tarifas diárias no Calendário antes de salvar."); return; }
+            if(!calendarioEmCriacao || !calendarioEmCriacao.length) { mudarAbaCadastro('tarifas'); mostrarAlerta("Você precisa gerar as tarifas diárias no Calendário antes de salvar."); return; }
             
             const obj = { 
                 id: imovelEditandoId || Date.now(), 
                 proprietario: { nome: val('cad-prop-nome'), cpf: val('cad-prop-cpf'), zap: val('cad-prop-zap'), email: val('cad-prop-email'), comissao: parseFloat(val('cad-prop-comissao'))||0 }, 
                 nome: n, numeroApto: val('cad-num-apto'), cidade: val('cad-cidade') + (val('cad-uf') ? ' - '+val('cad-uf') : ''), 
                 endereco: { cep: val('cad-cep'), cidade: val('cad-cidade'), uf: val('cad-uf'), rua: val('cad-rua'), numero: val('cad-numero'), bairro: val('cad-bairro'), complemento: val('cad-complemento') },
-                tipo: val('cad-tipo'), checkin: val('cad-checkin'), checkout: val('cad-checkout'), capacidadeTotal: parseInt(val('cad-capacidade'))||1, estrutura: val('cad-estrutura'), pagamento: val('cad-pagamento'), fotos: [...fotosEmCriacao], calendario: JSON.parse(JSON.stringify(calendarioEmCriacao)), reservas: imovelEditandoId ? imoveisDB.find(i=>i.id==imovelEditandoId).reservas : [], despesas: imovelEditandoId ? (imoveisDB.find(i=>i.id==imovelEditandoId).despesas || []) : [] 
+                tipo: val('cad-tipo'), checkin: val('cad-checkin'), checkout: val('cad-checkout'), capacidadeTotal: parseInt(val('cad-capacidade'))||1, estrutura: val('cad-estrutura'), pagamento: val('cad-pagamento'), 
+                fotos: [...fotosEmCriacao], 
+                calendario: JSON.parse(JSON.stringify(calendarioEmCriacao)), 
+                reservas: imovelEditandoId ? imoveisDB.find(i=>i.id==imovelEditandoId).reservas : [], 
+                despesas: imovelEditandoId ? (imoveisDB.find(i=>i.id==imovelEditandoId).despesas || []) : [] 
             };
             
             if(imovelEditandoId) { let idx = imoveisDB.findIndex(x=>x.id===imovelEditandoId); if(idx>-1) imoveisDB[idx]=obj; } else { imoveisDB.push(obj); }
@@ -1488,7 +1495,7 @@
             
             // Loop dia a dia consultando o calendário
             for(let d = new Date(dI); d < dO; d.setDate(d.getDate()+1)) {
-                let dtStr = d.toISOString().split('T')[0];
+                let dtStr = formatarDataLocalISO(d);
                 
                 // Busca o dia específico no calendário do banco de dados
                 let diaTarifado = im.calendario.find(x => x.data === dtStr);
@@ -1710,13 +1717,13 @@
                 fpIn.setDate(dt, true);
                 let do_ = new Date(dt+'T12:00:00'); 
                 do_.setDate(do_.getDate()+1); 
-                let dtOut = do_.toISOString().split('T')[0];
+                let dtOut = formatarDataLocalISO(do_);
                 if(fpOut) fpOut.setDate(dtOut, true);
             } else {
                  setVal('reserva-checkin', dt);
                  let do_ = new Date(dt+'T12:00:00'); 
                  do_.setDate(do_.getDate()+1); 
-                 setVal('reserva-checkout', do_.toISOString().split('T')[0]);
+                 setVal('reserva-checkout', formatarDataLocalISO(do_));
             }
         }
         
@@ -1826,7 +1833,7 @@
             if(bx && tb && bc) {
                 bx.className="bg-orange-50 border border-orange-200 text-orange-700 font-bold text-xl py-3 rounded-xl mb-4 text-center"; bc.className="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all"; bc.innerText="Confirmar Baixa";
                 if(d>0 && p>0) { bx.innerText=`Cobrar: R$ ${d.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; bx.classList.remove('hidden-view'); tb.innerText="Forma de pagamento da diferença:"; }
-                else if(d<0 || (res.statusPagamento==='cancelada' && p>res.valorTotal)) { bx.innerText=`Devolver: R$ ${Math.abs(d).toLocaleString('pt-BR',{minimumFractionDigits:2})}`; bx.className="bg-red-50 text-red-700 font-bold text-xl py-3 rounded-xl mb-4 border border-red-200"; bx.classList.remove('hidden-view'); tb.innerText="Como devolveu?"; bc.className="flex-1 bg-red-50 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all"; bc.innerText="Confirmar Devolução"; }
+                else if(d<0 || (res.statusPagamento==='cancelada' && p>res.valorTotal)) { bx.innerText=`Devolver: R$ ${Math.abs(d).toLocaleString('pt-BR',{minimumFractionDigits:2})}`; bx.className="bg-red-50 text-red-700 font-bold text-xl py-3 rounded-xl mb-4 border border-red-200"; bx.classList.remove('hidden-view'); tb.innerText="Como devolveu?"; bc.className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all"; bc.innerText="Confirmar Devolução"; }
                 else { bx.classList.add('hidden-view'); tb.innerText="Como pagou?"; } 
             }
             show('modal-pagamento');
