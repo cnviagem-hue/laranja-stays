@@ -526,6 +526,16 @@
         // FORMATADOR LOCAL DE DATAS (Impede que o Fuso Horário mude o dia)
         const formatarDataLocalISO = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
+        // PARSER SEGURO PARA QUALQUER FORMATO DE DATA DIGITADO (Evita conflitos com DD/MM/AAAA)
+        function parseInputDateSafe(dateStr) {
+            if (!dateStr) return '';
+            if (dateStr.includes('/')) {
+                let parts = dateStr.split('/');
+                if(parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
         // Mascaras e ViaCEP
         function mascaraTelefone(o) { let v=o.value.replace(/\D/g,""); if(v.length>11)v=v.substring(0,11); if(v.length>10)v=v.replace(/^(\d{2})(\d{5})(\d{4})/,"($1) $2-$3"); else if(v.length>6)v=v.replace(/^(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3"); else if(v.length>2)v=v.replace(/^(\d{2})(\d{0,5})/,"($1) $2"); o.value=v; }
         function mascaraCpfCnpj(o) { let v=o.value.replace(/\D/g,""); if(v.length<=11){v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d{1,2})$/,"$1-$2");}else{v=v.replace(/^(\d{2})(\d)/,"$1.$2");v=v.replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3");v=v.replace(/\.(\d{3})(\d)/,".$1/$2");v=v.replace(/(\d{4})(\d{1,2})$/,"$1-$2");} o.value=v; }
@@ -540,11 +550,16 @@
         function fecharMenusSuspensos(e) { if (!el('container-destino')?.contains(e.target)) hide('dropdown-destinos'); if (!el('container-hospedes')?.contains(e.target)) hide('dropdown-hospedes'); }
 
         function atualizarCheckoutAutomatico(idIn, idOut) {
-            const valIn = document.getElementById(idIn).value;
+            const valIn = parseInputDateSafe(document.getElementById(idIn).value);
             if (valIn) {
                 const dataIn = new Date(valIn + 'T12:00:00');
                 dataIn.setDate(dataIn.getDate() + 1);
-                document.getElementById(idOut).value = formatarDataLocalISO(dataIn);
+                const outDateStr = formatarDataLocalISO(dataIn);
+                document.getElementById(idOut).value = outDateStr;
+                let fpOut = document.getElementById(idOut)?._flatpickr;
+                if(fpOut) {
+                    fpOut.setDate(outDateStr, false);
+                }
             }
         }
 
@@ -1147,8 +1162,8 @@
         // ================= NOVO SISTEMA DE TARIFAS E AJUSTE EM LOTE =================
 
         function aplicarAjusteSazonalMassa() {
-            const dtIn = val('ajuste-lote-in');
-            const dtOut = val('ajuste-lote-out');
+            const dtIn = parseInputDateSafe(val('ajuste-lote-in'));
+            const dtOut = parseInputDateSafe(val('ajuste-lote-out'));
             const tipo = val('ajuste-lote-tipo');
             const perc = parseFloat(val('ajuste-lote-valor'));
 
@@ -1196,8 +1211,8 @@
 
         function aplicarTarifasEmLote() {
             const nome = val('lote-tarifa-nome').trim();
-            const dtIn = val('lote-tarifa-in');
-            const dtOut = val('lote-tarifa-out');
+            const dtIn = parseInputDateSafe(val('lote-tarifa-in'));
+            const dtOut = parseInputDateSafe(val('lote-tarifa-out'));
             const valor = parseFloat(val('lote-tarifa-valor'));
             const minNoites = parseInt(val('lote-tarifa-min')) || 1;
 
@@ -1467,7 +1482,7 @@
             
             // Checagem de disponibilidade básica (Cruzamento de Reservas)
             if(checkin && checkout && im.reservas) {
-                let dInB = new Date(checkin+'T12:00:00'); let dOutB = new Date(checkout+'T12:00:00');
+                let dInB = new Date(parseInputDateSafe(checkin)+'T12:00:00'); let dOutB = new Date(parseInputDateSafe(checkout)+'T12:00:00');
                 for(let r of im.reservas) { 
                     if(resIgnorar && r.id==resIgnorar) continue; 
                     if(r.statusPagamento==='cancelada') continue; 
@@ -1484,8 +1499,8 @@
             }
             
             // Calculo de Período Específico
-            let dI = new Date(checkin+'T12:00:00'); 
-            let dO = new Date(checkout+'T12:00:00'); 
+            let dI = new Date(parseInputDateSafe(checkin)+'T12:00:00'); 
+            let dO = new Date(parseInputDateSafe(checkout)+'T12:00:00'); 
             if(dO <= dI) return {disponivel:false};
             
             let noites = Math.round((dO-dI)/86400000); 
@@ -1568,12 +1583,12 @@
             });
             
             if(cIn && cOut && !flt.length && bk) {
-                let dIn = new Date(cIn+'T12:00:00');
+                let dIn = new Date(parseInputDateSafe(cIn)+'T12:00:00');
                 let dOutSugerido = new Date(dIn);
                 dOutSugerido.setDate(dIn.getDate() + minNoitesSugestao);
                 
                 let dataInFormatada = dIn.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                let dataOutDigitada = new Date(cOut+'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                let dataOutDigitada = new Date(parseInputDateSafe(cOut)+'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 let dataOutCorreta = dOutSugerido.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 
                 mostrarAlerta(`Atenção: A regra tarifária exige no mínimo <b>${minNoitesSugestao} noites</b> para este período.<br><br>Você pesquisou: ${dataInFormatada} a ${dataOutDigitada}<br><br>Sugestão de acordo com a regra:<br><b>${dataInFormatada} a ${dataOutCorreta}</b>`);
@@ -1606,8 +1621,8 @@
                 `<div class="text-[11px] text-slate-400 uppercase font-bold tracking-wider mb-1">Valor do pacote</div><div class="bg-orange-50 border border-orange-100 text-orange-600 font-bold text-xs px-2 py-0.5 rounded inline-block mb-2">${numN} noites</div><div class="text-2xl font-bold text-slate-800 mb-3">R$ ${precoTotalFormatado}</div>`));
                 
                 let zapProp = im.proprietario?.zap?.replace(/\D/g,'') || empresaDB.zap?.replace(/\D/g,'');
-                let dIn = ci ? ci.split('-').reverse().join('/') : '';
-                let dOut = co ? co.split('-').reverse().join('/') : '';
+                let dIn = ci ? parseInputDateSafe(ci).split('-').reverse().join('/') : '';
+                let dOut = co ? parseInputDateSafe(co).split('-').reverse().join('/') : '';
                 
                 let msgZ = encodeURIComponent(`Olá! Tenho interesse no imóvel *${im.nome}*.\n\n${ci ? `Período: ${dIn} a ${dOut} (${info.noites || 0} noites).\n${numP} hóspedes\nValor do pacote: R$ ${precoTotalFormatado}` : `Diárias a partir de: R$ ${precoCalcFormatado}`}\n\n*Orçamento sujeito a disponibilidade.\n\nUm instante que já já iremos te atender.`);
                 let btnZ = (info.isAPartirDe || (!info.isAPartirDe && !info.bloqueioMinNoites)) && info.disponivel ? `<a href="https://wa.me/55${zapProp}?text=${msgZ}" target="_blank" class="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2.5 rounded-xl flex items-center justify-center font-bold shadow transition-colors active:scale-95"><i class="fab fa-whatsapp text-lg mr-2"></i> Reservar com Agência</a>` : '';
@@ -1904,7 +1919,9 @@
                 if(minNoitesBloqueio) {
                     div.innerHTML=`<div class="text-center p-6 text-orange-600 font-bold bg-orange-50 rounded-xl border border-orange-200">Atenção: A regra tarifária exige no mínimo ${minNoitesBloqueio} diárias.</div>`;
                 } else {
-                    div.innerHTML='<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100">Sem disponibilidade. O calendário não tem tarifas geradas para este período ou há conflito.</div>';
+                    let dInFormat = parseInputDateSafe(ci).split('-').reverse().join('/');
+                    let dOutFormat = parseInputDateSafe(co).split('-').reverse().join('/');
+                    div.innerHTML=`<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100">Sem disponibilidade.<br><br><span class="text-sm font-medium">Você não gerou tarifas no calendário para o período de ${dInFormat} a ${dOutFormat}, ou há conflito de datas.</span></div>`;
                 }
             }
         }
@@ -1926,7 +1943,7 @@
         
         function salvarECopiarOrcamento() {
             const nome = val('orc-cliente-nome'); const zap = val('orc-cliente-zap'); if(!nome||zap.length<14){ mostrarAlerta("Nome e WhatsApp (DDD) são obrigatórios."); return; }
-            const im = imoveisDB.find(i=>i.id==val('orc-imovel-id')); let ci=val('orc-checkin').split('-').reverse().join('/'); let co=val('orc-checkout').split('-').reverse().join('/');
+            const im = imoveisDB.find(i=>i.id==val('orc-imovel-id')); let ci=parseInputDateSafe(val('orc-checkin')).split('-').reverse().join('/'); let co=parseInputDateSafe(val('orc-checkout')).split('-').reverse().join('/');
             
             let primeiroNome = nome.split(' ')[0];
             let ap = im.numeroApto ? `\n👉 Apto ${im.numeroApto}` : '';
@@ -1938,7 +1955,7 @@
                 const idx = orcamentosDB.findIndex(x => x.id == idEdit);
                 if (idx > -1) { orcamentosDB[idx].clienteNome = nome; orcamentosDB[idx].clienteZap = zap; orcamentosDB[idx].txtCopia = txt; }
             } else {
-                orcamentosDB.unshift({ id:Date.now(), dataCriacao:new Date().toISOString(), clienteNome:nome, clienteZap:zap, imovelId:im.id, nomeImovel:im.nome, checkin:val('orc-checkin'), checkout:val('orc-checkout'), hospedes:val('orc-hospedes'), valorTotal:val('orc-valor'), txtCopia: txt });
+                orcamentosDB.unshift({ id:Date.now(), dataCriacao:new Date().toISOString(), clienteNome:nome, clienteZap:zap, imovelId:im.id, nomeImovel:im.nome, checkin:parseInputDateSafe(val('orc-checkin')), checkout:parseInputDateSafe(val('orc-checkout')), hospedes:val('orc-hospedes'), valorTotal:val('orc-valor'), txtCopia: txt });
             }
             
             salvarBancoNoStorage(); 
