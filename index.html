@@ -1906,22 +1906,38 @@
         function buscarDisponibilidadeOrcamento() {
             const ci = val('busca-orc-checkin'); const co = val('busca-orc-checkout'); const ps = parseInt(val('busca-orc-hospedes'))||2;
             if(!ci||!co) { mostrarAlerta("Preencha as datas."); return; } const div = el('lista-imoveis-orcamento'); if(div) div.innerHTML='';
-            let count=0; let minNoitesBloqueio = null;
+            let count=0; let minNoitesBloqueio = null; let conflitoReserva = false;
+            
             imoveisDB.forEach(im => { 
                 if(im.capacidadeTotal < ps) return; 
+                
+                // calcularPrecoDinamico já verifica cruzamento de reservas e se há tarifas
                 let inf = calcularPrecoDinamico(im, ci, co); 
-                if(inf.bloqueioMinNoites) { if(!minNoitesBloqueio || inf.minNoites > minNoitesBloqueio) minNoitesBloqueio = inf.minNoites; }
-                if(!inf.disponivel || inf.bloqueioMinNoites) return; 
+                
+                if(inf.bloqueioMinNoites) { 
+                    if(!minNoitesBloqueio || inf.minNoites > minNoitesBloqueio) minNoitesBloqueio = inf.minNoites; 
+                }
+                
+                // Se não estiver disponível (seja por falta de tarifa ou conflito de reserva)
+                if(!inf.disponivel || inf.bloqueioMinNoites) {
+                     // Verifica se o motivo da indisponibilidade é um choque de datas com reservas existentes
+                     if(verificarChoqueDatas(im.id, ci, co)) {
+                         conflitoReserva = true;
+                     }
+                     return; 
+                }
+                
                 count++; 
                 if(div) div.insertAdjacentHTML('beforeend', `<div class="bg-white border border-slate-200 p-4 rounded-xl mb-2 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm hover:border-orange-200 transition-colors"><div><h4 class="font-bold text-[#0071c2]">${im.nome}</h4><p class="text-xs text-slate-500 mt-1">${String(inf.noites).padStart(2,'0')} noites - <span class="text-sm font-normal text-slate-700">R$ ${(inf.precoTotal || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></p></div><button onclick="abrirModalGerarOrcamento(${im.id}, ${inf.precoTotal}, '${ci}', '${co}', ${ps})" class="bg-slate-800 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all w-full sm:w-auto">Gerar Orçamento</button></div>`); 
             });
+            
             if(count===0 && div) {
                 if(minNoitesBloqueio) {
-                    div.innerHTML=`<div class="text-center p-6 text-orange-600 font-bold bg-orange-50 rounded-xl border border-orange-200">Atenção: A regra tarifária exige no mínimo ${minNoitesBloqueio} diárias.</div>`;
+                    div.innerHTML=`<div class="text-center p-6 text-orange-600 font-bold bg-orange-50 rounded-xl border border-orange-200">Atenção: A regra tarifária exige no mínimo ${minNoitesBloqueio} diárias para este período.</div>`;
+                } else if (conflitoReserva) {
+                     div.innerHTML=`<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100"><i class="fas fa-calendar-times text-3xl mb-2 block"></i>Sem disponibilidade.<br>As datas selecionadas já possuem reservas para as acomodações que atendem aos seus critérios.</div>`;
                 } else {
-                    let dInFormat = parseInputDateSafe(ci).split('-').reverse().join('/');
-                    let dOutFormat = parseInputDateSafe(co).split('-').reverse().join('/');
-                    div.innerHTML=`<div class="text-center p-6 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100">Sem disponibilidade.<br><br><span class="text-sm font-medium">Você não gerou tarifas no calendário para o período de ${dInFormat} a ${dOutFormat}, ou há conflito de datas.</span></div>`;
+                    div.innerHTML=`<div class="text-center p-6 text-slate-500 font-bold bg-slate-50 rounded-xl border border-slate-200">Nenhum imóvel disponível. Verifique se há tarifas geradas no calendário para este período.</div>`;
                 }
             }
         }
